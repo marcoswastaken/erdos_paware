@@ -1,6 +1,8 @@
 # erdos_paware
  Pawsitive Retrieval RAG Project
 
-The original raw data should be located in `reddit_data/reddit.parquet` in the parent directory of this project on your local machine
+The original raw data should be located in `reddit_data/reddit.parquet` in the parent directory of this project on your local machine.
+
+By default, notebooks that generate new data files save them to `temp_data/` in the parent directory of the project.
 
 If you add `_scratch` to any filename, it will be filtered by the `.gitignore`.
