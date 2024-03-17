@@ -102,7 +102,10 @@ def check_token_lengths(data_chunked:pl.DataFrame,
     text_chunks = data_chunked["text_chunk"].to_list()
 
     ## Count the length of the sequence of tokens after tokenizing each chunk
-    lengths = [len(tokenizer.encode(chunk)) for chunk in text_chunks]
+    lengths = []
+    for chunk in text_chunks:
+        if chunk:
+            lengths.append(len(tokenizer.encode(chunk)))
     
     print(f"Max sequence length observed after tokenizing"+
           f" chunked text: {max(lengths)}")
