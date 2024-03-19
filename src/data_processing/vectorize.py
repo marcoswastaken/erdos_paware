@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -8,60 +10,6 @@ from transformers import AutoTokenizer
 import polars as pl
 
 from typing import Optional, List, Tuple
-
-def vectorize_chunked_data(data_chunked: pl.DataFrame, 
-                           embeddings: HuggingFaceEmbeddings=HuggingFaceEmbeddings(
-                               model_name="thenlper/gte-base")
-                           )->pl.DataFrame:
-    '''
-        Vectorize the chunked texts
-
-        Parameters:
-        -----------
-            data_chunked: pl.DataFrame
-                A dataframe with a chunk of text to be embedded
-            embeddings: HuggingFaceEmbeddings
-                A sentence-transformer model from the Hugging Face library 
-                https://huggingface.co/models?library=sentence-transformers
-                Default: HuggingFaceEmbeddings(model_name="thenlper/gte-base")
-
-        Returns:
-        --------
-            pl.DataFrame
-                A clone of the input datafram with a new column:
-                    - "vector": The vector representing the text_chunk
-                        determined by the embdeddings model
-        
-        Example:
-        --------
-            from langchain_community.embeddings import HuggingFaceEmbeddings
-            model = HuggingFaceEmbeddings(model_name="thenlper/gte-base")
-            data_vectorized = vectorize.vectorize_chunked_data(data_chunked=data_chunked,
-                                                               embeddings=model)
-    '''
-    ## Clone the data
-    data_vectorized = data_chunked.clone()
-    
-    ## Drop any rows with null chunks and announce if this is done
-    mask = (data_vectorized["text_chunk"].is_null())
-    if data_vectorized.filter(mask).shape[0]>0:
-        print(f"Dropping {data_vectorized.filter(mask).shape[0]} rows with "+
-                    f"text_chunk is null")
-    data_vectorized = data_vectorized.filter(~mask)
-    
-    ## Compute embeddings
-    text_chunks = data_vectorized["text_chunk"].to_list()
-    vectors = embeddings.embed_documents(text_chunks)
-    
-    ## Add embeddings to the dataframe
-    data_vectorized = data_vectorized.with_columns(
-        pl.Series(
-            name="vector",
-            values=vectors
-        )
-    )
-
-    return data_vectorized
 
 def check_token_lengths(data_chunked:pl.DataFrame, 
                         model:str="thenlper/gte-base"):
@@ -117,3 +65,145 @@ def check_token_lengths(data_chunked:pl.DataFrame,
     plt.xlabel("Chunk Length (in tokens)")
     plt.ylabel("Frequency")
     plt.show()
+
+def vectorize_chunked_data(
+        data_chunked: pl.DataFrame, 
+        embeddings: HuggingFaceEmbeddings=HuggingFaceEmbeddings(
+            model_name="thenlper/gte-base")
+            )->pl.DataFrame:
+    """
+        Vectorize the chunked texts
+
+        Parameters:
+        -----------
+            data_chunked: pl.DataFrame
+                A dataframe with a chunk of text to be embedded
+            embeddings: HuggingFaceEmbeddings
+                A sentence-transformer model from the Hugging Face library 
+                https://huggingface.co/models?library=sentence-transformers
+                Default: HuggingFaceEmbeddings(model_name="thenlper/gte-base")
+
+        Returns:
+        --------
+            pl.DataFrame
+                A clone of the input datafram with a new column:
+                    - "vector": The vector representing the text_chunk
+                        determined by the embdeddings model
+        
+        Example:
+        --------
+            from langchain_community.embeddings import HuggingFaceEmbeddings
+            model = HuggingFaceEmbeddings(model_name="thenlper/gte-base")
+            data_vectorized = vectorize.vectorize_chunked_data(
+                data_chunked=data_chunked,
+                embeddings=model)
+    """
+    ## Clone the data
+    data_vectorized = data_chunked.clone()
+    
+    ## Drop any rows with null chunks and announce if this is done
+    mask = (data_vectorized["text_chunk"].is_null())
+    if data_vectorized.filter(mask).shape[0]>0:
+        print(f"Dropping {data_vectorized.filter(mask).shape[0]} rows with "+
+                    f"text_chunk is null")
+    data_vectorized = data_vectorized.filter(~mask)
+    
+    ## Compute embeddings
+    text_chunks = data_vectorized["text_chunk"].to_list()
+    vectors = embeddings.embed_documents(text_chunks)
+    
+    ## Add embeddings to the dataframe
+    data_vectorized = data_vectorized.with_columns(
+        pl.Series(
+            name="vector",
+            values=vectors
+        )
+    )
+
+    return data_vectorized
+
+def batch_vectorize_and_save(
+        data_chunked:pl.DataFrame,
+        embeddings:HuggingFaceEmbeddings=HuggingFaceEmbeddings(
+            model_name="thenlper/gte-base"),
+        batch_size:int=100000,
+        save_dir:str="../temp_data/vectorized_data_parquets/",
+        file_prefix:str="vectorized_data_",
+        overwrite:bool=False
+)->None:
+    """
+        This function breaks a large dataset of text_chunks into smaller pieces
+        to be vectorized. Then it saves the results to parquet files.
+
+        Parameters:
+        -----------
+            chunked_data:pl.DataFrame
+                A Polars DataFrame with a column "text_chunk" to be vectorized
+            embeddings:HuggingFaceEmbeddings
+                A sentence-transformer model from the Hugging Face library 
+                https://huggingface.co/models?library=sentence-transformers
+                Default: HuggingFaceEmbeddings(model_name="thenlper/gte-base")
+            batch_size:int
+                The largest number of rows to include in a batch
+                Default:=100000
+            save_dir:str
+                The directory to save the parquet files to
+                Default: "../temp_data/vectorized_data_parquets/"
+            file_prefix:str
+                A prefix for the parquet files
+                Default: "vectorized_data_"
+            overwrite:bool=False
+                Indicate whether this function should overwrite files if they
+                already exist.
+        
+        Returns:
+        --------
+            None
+
+        Example:
+        --------
+            batch_vectorize_and_save(
+                data_chunked=data_chunked,
+                batch_size=100000,
+                save_dir="../temp_data/vectorized_batch_test/",
+                file_prefix="vectorized_data_test_")
+
+    """
+
+    ## Check whether the first parquet file already exists
+    file_exists = os.path.exists(save_dir+file_prefix+"pt0.parquet")
+
+    ## Make sure not to overwrite without being asked to
+    if file_exists and ~overwrite:
+        print("Files already exist in the specified directory. "+
+              "To overwrite, set overwrite=True.")
+        return None
+    
+    ## Make sure the directory exists
+    os.makedirs(save_dir, exist_ok=True)
+
+    ## Set up the edges for the batches
+    num_rows = data_chunked.shape[0]
+    edges = [0]
+    i = 0
+    while edges[i]+batch_size<num_rows:
+        edges.append(edges[i]+batch_size)
+        i += 1
+    edges.append(num_rows)
+
+    ## Vectorize each batch
+    for j in range(i+1):
+        print(f"Working on batch {j}, rows {edges[j]} through {edges[j+1]}...")
+        filename=f"{save_dir}{file_prefix}pt{j}.parquet"
+        data = data_chunked[edges[j]:edges[j+1]]
+        ## Vectorize
+        data_vectorized = vectorize_chunked_data(
+            data_chunked=data,
+            embeddings=embeddings)
+        ## Write to parquet
+        curpath = os.path.abspath(os.curdir + "/..")
+        fullpath=curpath+filename[2:]
+        data_vectorized.write_parquet(fullpath)
+        print(f"Done with batch {j}.")
+
+    return None
