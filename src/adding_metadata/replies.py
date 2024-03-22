@@ -2,6 +2,22 @@ import polars as pl
 import typing
 
 def add_reply_list(df:pl.DataFrame)->pl.DataFrame:
+    '''
+    A function that adds a column called 'reply_ids' that contains a list of the 
+    'reddit_name' ids that are replies to the post in that row. If a there are 
+    no replies, the value in this column is 'null'.
+
+    Parameters:
+    -----------
+        df:pl.DataFrame
+            A pl.DataFrame with a schema similar to the raw Aware data
+    
+    Returns:
+    --------
+        pl.DataFrame
+            The input dataframe along with a new 'reply_ids' column, as 
+            described above.
+    '''
 
     ## Group the data by 'reddit_parent_id'
     group = df.group_by("reddit_parent_id")
