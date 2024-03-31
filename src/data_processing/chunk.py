@@ -85,9 +85,10 @@ def chunk_preprocessed_data_with_subreddit(
 
     Example:
     --------
-    data_chunked = chunk_preprocessed_data(data_preprocessed=data_preprocessed,
-                                           chunk_size=512,
-                                           chunk_overlap_pct=0.2)                          
+    data_chunked = chunk_preprocessed_data_with_subreddit(
+        data_preprocessed=data_preprocessed,
+        chunk_size=512,
+        chunk_overlap_pct=0.2)                          
     """
 
     ## Clone the data
