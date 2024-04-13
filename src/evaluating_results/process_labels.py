@@ -93,7 +93,6 @@ def get_majority_vote(df:pl.DataFrame)->pl.DataFrame:
     # Apply the voting machine function
     df = df.with_columns(
         df['votes'].map_elements(
-            voting_machine, return_dtype=int).alias("relevance_rating")
-    )
+            voting_machine, return_dtype=int).alias("relevance_rating"))
     
     return df
