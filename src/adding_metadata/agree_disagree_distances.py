@@ -114,7 +114,7 @@ def add_agree_disagree_distances(df:pl.DataFrame):
     ## Join the grouped data back to the original dataframe
     df = df.join(grouped, on="reddit_name", how="left")
 
-    ## Add agree and disagree distances for replies to each reddit_name
+    ## Compute the average distances of the replies to the agree statements
     def get_reply_agree_distances(reply_list):
         reply_agree_distances = []
         for reddit_name in reply_list:
@@ -124,7 +124,7 @@ def add_agree_disagree_distances(df:pl.DataFrame):
                         .mean())    
         return reply_agree_distances
 
-    ## Add agree and disagree distances for replies to each reddit_name
+    ## Compute the average distances of the replies to the disagree statements
     def get_reply_disagree_distances(reply_list):
         reply_disagree_distances = []
         for reddit_name in reply_list:
