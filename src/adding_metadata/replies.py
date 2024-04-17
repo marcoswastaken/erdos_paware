@@ -31,4 +31,4 @@ def add_reply_list(df:pl.DataFrame)->pl.DataFrame:
     replies = replies.rename(new_names)
 
     ## Join the list of 'reddit_name' values that are replies
-    return df.join(replies, on="reddit_name", how="left")
+    return df.join(replies, on="reddit_name", how="left").clone()
