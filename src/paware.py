@@ -341,7 +341,7 @@ class PawScores:
         self.rr_scores = {}
         self.dcg_scores = {}
 
-        def compute_mext_rr_scores():
+        def compute_mext_rr_scores(self):
             for i in range(self.relevant_results.shape[0]):
                 query_text = self.relevant_results[i]["query_text"]
                 num_relevant = self.relevant_results[i]["num_relevant"]
@@ -365,7 +365,7 @@ class PawScores:
                 else:
                     self.mext_rr_scores[query_text] = 0
         
-        def compute_rr_scores():
+        def compute_rr_scores(self):
             for i in range(self.relevant_results.shape[0]):
                 query_text = self.relevant_results[i]["query_text"]
                 num_relevant = self.relevant_results[i]["num_relevant"]
@@ -387,5 +387,5 @@ class PawScores:
                 else:
                     self.rr_scores[query_text] = 0
 
-        def compute_dcg_scores():
+        def compute_dcg_scores(self):
             pass
