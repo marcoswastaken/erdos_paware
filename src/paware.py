@@ -10,6 +10,7 @@ import warnings
 
 ## Loading our modules
 from data_processing import preprocess, chunk, vectorize
+from evaluating_results import process_labels
 
 ## For data handling
 import polars as pl
@@ -211,6 +212,11 @@ class PawQuery:
             LIMIT: int,
             NPROBES: int,
             REFINE_FACTOR: int,
+            FILTER_SUBMISSIONS: bool = False,
+            FILTER_SHORT_QUESTIONS: bool = False,
+            RERANK_SENTIMENT: bool = False,
+            RERANK_AGREE_DISTANCE: bool = False,
+            RERANK_DISAGREE_DISTANCE: bool = False
     ) -> None:
         
         self.config_name = CONFIG_NAME
@@ -221,6 +227,11 @@ class PawQuery:
         self.limit = LIMIT
         self.nprobes = NPROBES
         self.refine_factor = REFINE_FACTOR
+        self.filter_submissions = FILTER_SUBMISSIONS
+        self.filter_short_questions = FILTER_SHORT_QUESTIONS
+        self.rerank_sentiment = RERANK_SENTIMENT
+        self.rerank_agree_distance = RERANK_AGREE_DISTANCE
+        self.rerank_disagree_distance = RERANK_DISAGREE_DISTANCE
 
         self.db_table = "table_"+self.config_name
         self.query_file = self.query_save_dir\
@@ -260,3 +271,121 @@ class PawQuery:
         results.write_parquet(self.query_file)
 
         return results
+    
+class PawScores:
+    standard_queries = [
+    "How do General Motors employees feel about RTO?",
+    "What kind of benefits does GM offer?",
+    "When should you apply for a promotion at GM?",
+    "How much does a driver make with UPS?",
+    "How long is a typical UPS shift? OR Should I work a double shift at UPS?",
+    "How do UPS employees feel about route cuts?",
+    "Is it better to work at fedex express or fedex ground?",
+    "How do FedEx employees feel about route cuts?",
+    "How often do you get a raise at Lowes?",
+    "Does your schedule get changed often at Lowes?",
+    "What is the worst drink to make for Starbucks baristas?",
+    "Does Starbucks pay overtime?",
+    "What is your favorite thing about working for Starbucks?",
+    "How do Whole Foods workers feel about store managers?",
+    "What job perks for Whole Foods employees value most?",
+    #"Do Kraken employees see themselves staying at the company for the long term?",
+    #"What do Kraken employees find frustrating in their day to day work?",
+    "What benefits do Chase employees value most?",
+    "Do Chase employees see opportunities for promotion and professional growth at the company?",
+    "What causes bank employees the most stress at work?",
+    "What are some reasons that bank employees quit their jobs?",
+    "Do Fidelity employees want to work remotely?",
+    "Do GameStop employees feel valued by the company?",
+    "What does a typical day look like when working for GameStop?",
+    "Do CVS employees feel safe at work?",
+    "What do CVS workers do if they notice theft?"]
+
+    def __init__(
+            self,
+            RESULTS_FILE_PATH: str,
+            ) -> None:
+        
+        self.results_file_path = RESULTS_FILE_PATH
+
+        ## Load the query results
+        self.results = pl.read_parquet(self.results_file_path)
+
+        ## Load the labels and votes for the 00 config
+        self.labeled_00_df = process_labels\
+            .get_merged_labels_and_votes(config="00")
+        self.labeled_00_df = process_labels\
+            .get_majority_vote(self.labeled_00_df)
+
+        ## Load the labels and votes for the 02 config
+        self.labeled_02_df = process_labels\
+            .get_merged_labels_and_votes(config="02")
+        self.labeled_02_df = process_labels\
+            .get_majority_vote(self.labeled_02_df)
+
+        ## Concatenate the two dataframes
+        self.labeled_df = pl.concat([self.labeled_00_df, 
+                                     self.labeled_02_df])
+
+        ## Group the labeled dataframe by query_text
+        self.grouped = self.labeled_df.group_by("query_text")
+
+        ## Add a counts of relevant results, lists of relevant results
+        self.relevant_results = self.grouped.agg(
+            num_relevant = pl.col("relevance_rating")\
+                    .filter(pl.col("relevance_rating")==1).len(),
+            relevant_names = pl.col("reddit_name")\
+                    .filter(pl.col("relevance_rating")==1)).clone()
+        
+        self.mext_rr_scores = {}
+        self.rr_scores = {}
+        self.dcg_scores = {}
+
+        def compute_mext_rr_scores():
+            for i in range(self.relevant_results.shape[0]):
+                query_text = self.relevant_results[i]["query_text"]
+                num_relevant = self.relevant_results[i]["num_relevant"]
+                
+                query_results = self.results\
+                    .filter(pl.col("query_text")==query_text)\
+                    .sort(by="_distance")
+                
+                query_score = 0
+                for j in range(query_results.shape[0]):
+                    if query_results[j]["reddit_name"] in \
+                        self.relevant_results[i]["relevant_names"][0]:
+
+                        if j < num_relevant:
+                            query_score += 1
+                        else:
+                            query_score += 1/(j-num_relevant+1)
+                
+                if num_relevant > 0:
+                    self.mext_rr_scores[query_text] = query_score/num_relevant
+                else:
+                    self.mext_rr_scores[query_text] = 0
+        
+        def compute_rr_scores():
+            for i in range(self.relevant_results.shape[0]):
+                query_text = self.relevant_results[i]["query_text"]
+                num_relevant = self.relevant_results[i]["num_relevant"]
+                
+                query_results = self.results\
+                    .filter(pl.col("query_text")==query_text)\
+                    .sort(by="_distance")
+                
+                query_score = 0
+                for j in range(query_results.shape[0]):
+                    if query_results[j]["reddit_name"] in \
+                        self.relevant_results[i]["relevant_names"][0]:
+
+                        query_score = 1/(j+1)
+
+                
+                if num_relevant > 0:
+                    self.rr_scores[query_text] = query_score
+                else:
+                    self.rr_scores[query_text] = 0
+
+        def compute_dcg_scores():
+            pass
