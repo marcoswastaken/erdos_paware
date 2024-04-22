@@ -30,15 +30,26 @@ def get_merged_labels_and_votes(config:str)->pl.DataFrame:
 
     ## Merge all the files
     for f in files[1:]:
-        ## Get the human name from the filename
+
+        ## Get the current columns
+        df_cols = df.columns
+
+        ## Get the next human name from the filename
         human = f.split("_")[2][:2]
 
-        ## Read the file and sort by query_text and reddit_name
-        temp_df = pl.read_parquet(LABELED_DATA_DIR+f).sort(
-            by=["query_text", "reddit_name"])
-        
-        ## Update the labels in the main dataframe
-        df = df.with_columns(temp_df[human+"_label"].alias(human+"_label"))
+        ## Read the next file
+        next_df = pl.read_parquet(LABELED_DATA_DIR+f)
+        ## Join the next file to the current dataframe
+        df = df.join(next_df, on=["query_text", "reddit_name"], how="outer")
+
+        ## Update the labels from the next human with the current data
+        df = df.with_columns(
+            pl.when(pl.col(human+"_label_right")\
+                .is_not_null())\
+                .then(pl.col(human+"_label_right"))\
+                .otherwise(None)\
+                .alias(human+"_label")
+        )[df_cols]
     
     ## Add a column that has a list of all votes cast
     df = df.with_columns(
