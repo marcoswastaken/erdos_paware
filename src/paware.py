@@ -21,6 +21,28 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 import lancedb
 
 class PawEmbedding:
+    '''
+    This class is used to embed data using a given configuration.
+
+    Parameters:
+        CONFIG_NAME: str
+            The name of the configuration to be used.
+        RAW_DATA_PATH: str
+            The path to the raw data to be embedded.
+        EMBEDDED_SAVE_DIR: str
+            The directory where the embedded data will be saved.
+        BATCH_SIZE: int
+            The size of the batches to be used for vectorization.
+        CHUNK_WITH_METADATA: bool
+            Whether to chunk the data with metadata.
+        CHUNK_SIZE: int
+            The size of the chunks to be used for vectorization.
+        CHUNK_OVERLAP_PCT: float
+            The percentage of overlap between chunks.
+        
+        Returns:
+            None
+    '''
     def __init__(
             self,
             CONFIG_NAME: str,
@@ -44,6 +66,16 @@ class PawEmbedding:
         self.file_prefix = "vectorized_config_"+self.config_name+"_data_"
 
     def embed_data(self, verbose: bool = False):
+        '''
+        This method is used to embed the data using the given configuration.
+
+        Parameters:
+            verbose: bool
+                Whether to print the progress of the process.
+        
+        Returns:
+            None
+        '''
         if verbose: print("Loading and chunking...")
         ## Load raw data
         data_raw = pl.read_parquet(self.raw_data_path)
@@ -225,4 +257,6 @@ class PawQuery:
             )
             results = pl.concat([results, next])
         
+        results.write_parquet(self.query_file)
+
         return results
