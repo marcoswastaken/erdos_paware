@@ -389,3 +389,13 @@ class PawScores:
 
         def compute_dcg_scores(self):
             pass
+
+        def get_mext_rr_scores(self):
+            return self.mext_rr_scores
+        
+        def get_rr_scores(self):
+            return self.rr_scores
+        
+        def get_dcg_scores(self):
+            return self.dcg_scores
+        
