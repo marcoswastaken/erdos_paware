@@ -343,49 +343,51 @@ class PawScores:
 
     def compute_mext_rr_scores(self):
         for i in range(self.relevant_results.shape[0]):
-            query_text = self.relevant_results[i]["query_text"]
-            num_relevant = self.relevant_results[i]["num_relevant"]
+            query_text = self.relevant_results[i]["query_text"][0]
+            num_relevant = self.relevant_results[i]["num_relevant"][0]
             
-            query_results = self.results\
-                .filter(pl.col("query_text")==query_text)\
-                .sort(by="_distance")
-            
-            query_score = 0
-            for j in range(query_results.shape[0]):
-                if query_results[j]["reddit_name"] in \
-                    self.relevant_results[i]["relevant_names"][0]:
+            if query_text:
+                query_results = self.results\
+                    .filter(pl.col("query_text")==query_text)\
+                    .sort(by="_distance")
+                
+                query_score = 0
+                for j in range(query_results.shape[0]):
+                    if query_results[j]["reddit_name"] in \
+                        self.relevant_results[i]["relevant_names"][0]:
 
-                    if j < num_relevant:
-                        query_score += 1
-                    else:
-                        query_score += 1/(j-num_relevant+1)
-            
-            if num_relevant > 0:
-                self.mext_rr_scores[query_text] = query_score/num_relevant
-            else:
-                self.mext_rr_scores[query_text] = 0
+                        if j < num_relevant:
+                            query_score += 1
+                        else:
+                            query_score += 1/(j-num_relevant+1)
+                
+                if num_relevant > 0:
+                    self.mext_rr_scores[query_text] = query_score/num_relevant
+                else:
+                    self.mext_rr_scores[query_text] = 0
     
     def compute_rr_scores(self):
         for i in range(self.relevant_results.shape[0]):
-            query_text = self.relevant_results[i]["query_text"]
-            num_relevant = self.relevant_results[i]["num_relevant"]
+            query_text = self.relevant_results[i]["query_text"][0]
+            num_relevant = self.relevant_results[i]["num_relevant"][0]
             
-            query_results = self.results\
-                .filter(pl.col("query_text")==query_text)\
-                .sort(by="_distance")
-            
-            query_score = 0
-            for j in range(query_results.shape[0]):
-                if query_results[j]["reddit_name"] in \
-                    self.relevant_results[i]["relevant_names"][0]:
+            if query_text:
+                query_results = self.results\
+                    .filter(pl.col("query_text")==query_text)\
+                    .sort(by="_distance")
+                
+                query_score = 0
+                for j in range(query_results.shape[0]):
+                    if query_results[j]["reddit_name"] in \
+                        self.relevant_results[i]["relevant_names"][0]:
 
-                    query_score = 1/(j+1)
+                        query_score = 1/(j+1)
 
-            
-            if num_relevant > 0:
-                self.rr_scores[query_text] = query_score
-            else:
-                self.rr_scores[query_text] = 0
+                
+                if num_relevant > 0:
+                    self.rr_scores[query_text] = query_score
+                else:
+                    self.rr_scores[query_text] = 0
 
     def compute_dcg_scores(self):
         pass
