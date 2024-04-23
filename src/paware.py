@@ -382,6 +382,7 @@ class PawScores:
                         self.relevant_results[i]["relevant_names"][0]:
 
                         query_score = 1/(j+1)
+                        break
 
                 
                 if num_relevant > 0:
