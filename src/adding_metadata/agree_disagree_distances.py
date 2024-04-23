@@ -7,8 +7,10 @@ from adding_metadata import replies
 import polars as pl
 
 import numpy as np
+from numpy.linalg import norm
 
 from langchain_community.embeddings import HuggingFaceEmbeddings
+
 
 def add_agree_disagree_distances(df:pl.DataFrame):
     """
@@ -74,20 +76,22 @@ def add_agree_disagree_distances(df:pl.DataFrame):
     ## Define a function to calculate distances from agree statements
     def get_agree_scores(vector):
         agree_scores = []
-        for statement in agree_embeddings:
-            agree_array = np.array(statement)
-            agree_scores.append(np.linalg.norm(vector - agree_array))    
-
+        for agree_embedding in agree_embeddings:
+            agree_scores.append(
+                1- (np.dot(vector, agree_embedding) /\
+                        (norm(vector) * norm(agree_embedding)))
+            )
         return agree_scores
 
     ## Define a function to calculate distances from disagree statements
     def get_disagree_scores(vector):
         disagree_scores = []
 
-        for statement in disagree_embeddings:
-            disagree_array = np.array(statement)
-            disagree_scores.append(np.linalg.norm(vector - disagree_array))
-
+        for disagree_embedding in disagree_embeddings:
+            disagree_scores.append(
+                1 - (np.dot(vector, disagree_embedding) /\
+                        (norm(vector) * norm(disagree_embedding)))
+            )
         return disagree_scores
     
     ## Calculate distances to chunks
@@ -114,7 +118,7 @@ def add_agree_disagree_distances(df:pl.DataFrame):
     ## Join the grouped data back to the original dataframe
     df = df.join(grouped, on="reddit_name", how="left")
 
-    ## Compute the average distances of the replies to the agree statements
+    ## Add agree and disagree distances for replies to each reddit_name
     def get_reply_agree_distances(reply_list):
         reply_agree_distances = []
         for reddit_name in reply_list:
@@ -124,7 +128,7 @@ def add_agree_disagree_distances(df:pl.DataFrame):
                         .mean())    
         return reply_agree_distances
 
-    ## Compute the average distances of the replies to the disagree statements
+    ## Add agree and disagree distances for replies to each reddit_name
     def get_reply_disagree_distances(reply_list):
         reply_disagree_distances = []
         for reddit_name in reply_list:

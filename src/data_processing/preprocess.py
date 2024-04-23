@@ -16,8 +16,10 @@ def preprocess_data(DATA_RAW: pl.DataFrame)->pl.DataFrame:
         - Drop rows with comments that are empty
         - Replace 'reddit_text' with 'reddit_title' in rows with sumbissions 
             that are empty
-        - Add reply_id column that lists the reddit_name of replies to that row
-
+        - Add 'reply_ids' column that lists the reddit_name values of replies to 
+            that row
+        - Add 'is_short_question' column that is True if the 'reddit_text' 
+            column is a question with less than 100 characters
     Parameters:
     -----------
         DATA_RAW: pl.DataFrame
@@ -59,12 +61,22 @@ def preprocess_data(DATA_RAW: pl.DataFrame)->pl.DataFrame:
     data_preprocessed = filter_out_bots(data_preprocessed)
 
     ## Drop rows with comments|submissions that are empty
-
     data_preprocessed = replace_null_text_with_title(data_preprocessed)
 
+    ## Add reply_id column that lists the reddit_name of replies to that row
     data_preprocessed = replies.add_reply_list(data_preprocessed)
+
+    ## Add is_short_question column that is True if the reddit_text column is a
+    ## question with less than 100 characters
+    def is_short_question(s: str) -> bool:
+        condition_1 = len(s) < 100 and s.endswith("?")
+        return condition_1
     
-    return data_preprocessed
+    data_preprocessed = data_preprocessed.with_columns(
+        is_short_question = pl.col("reddit_text")\
+                                .map_elements(is_short_question))
+    
+    return data_preprocessed.clone()
 
 def filter_out_bots(DATA_RAW: pl.DataFrame, 
                     min_len:int=35, 
