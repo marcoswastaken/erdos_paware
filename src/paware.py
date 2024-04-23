@@ -44,6 +44,7 @@ class PawEmbedding:
         Returns:
             None
     '''
+
     def __init__(
             self,
             CONFIG_NAME: str,
@@ -113,6 +114,20 @@ class PawEmbedding:
         ## List the files created
         file_path_list = os.listdir(self.embedded_save_dir)
         if verbose: print(f"Files created:\n:{file_path_list}\n")
+    
+    def add_agree_disagree_distances(self):
+        '''
+        This method is used to add agree and disagree distances to the data.
+
+            Parameters:
+                None
+            
+            Returns:
+                None
+        '''
+        pass
+
+        
     
 class PawIndex:
     def __init__(
