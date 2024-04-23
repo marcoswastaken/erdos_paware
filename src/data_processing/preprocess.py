@@ -2,6 +2,12 @@ import polars as pl
 import re
 from typing import Optional, List, Tuple
 
+## For adding our modules to the system path
+import sys
+sys.path.append("../src/")
+
+from adding_metadata import replies
+
 def preprocess_data(DATA_RAW: pl.DataFrame)->pl.DataFrame:
     '''
     Complete basic preprocessing tasks:
@@ -10,6 +16,7 @@ def preprocess_data(DATA_RAW: pl.DataFrame)->pl.DataFrame:
         - Drop rows with comments that are empty
         - Replace 'reddit_text' with 'reddit_title' in rows with sumbissions 
             that are empty
+        - Add reply_id column that lists the reddit_name of replies to that row
 
     Parameters:
     -----------
@@ -54,6 +61,8 @@ def preprocess_data(DATA_RAW: pl.DataFrame)->pl.DataFrame:
     ## Drop rows with comments|submissions that are empty
 
     data_preprocessed = replace_null_text_with_title(data_preprocessed)
+
+    data_preprocessed = replies.add_reply_list(data_preprocessed)
     
     return data_preprocessed
 
