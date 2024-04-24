@@ -11,6 +11,7 @@ import warnings
 ## Loading our modules
 from data_processing import preprocess, chunk, vectorize
 from evaluating_results import process_labels
+from adding_metadata import agree_disagree_distances
 
 ## For data handling
 import polars as pl
@@ -109,11 +110,20 @@ class PawEmbedding:
             save_dir=self.embedded_save_dir,
             file_prefix=self.file_prefix
         )
-        if verbose: print("... done vectorizing and saving.\n")
 
-        ## List the files created
-        file_path_list = os.listdir(self.embedded_save_dir)
-        if verbose: print(f"Files created:\n:{file_path_list}\n")
+        ## Combine the parquet files
+        files = os.listdir(self.embedded_save_dir)
+        df = pl.read_parquet(self.embedded_save_dir+files[0])
+        for f in files[1:]:
+            df = pl.concat([df, pl.read_parquet(self.embedded_save_dir+f)])
+        
+        df.write_parquet(
+            self.embedded_save_dir+self.file_prefix+"complete.parquet")
+
+        for f in files:
+            os.remove(self.embedded_save_dir+f)
+
+        if verbose: print("... done vectorizing and saving.\n")
     
     def add_agree_disagree_distances(self):
         '''
@@ -125,9 +135,25 @@ class PawEmbedding:
             Returns:
                 None
         '''
-        pass
-
+        ## Load the data
+        file = os.listdir(self.embedded_save_dir)[0]
+        df = pl.read_parquet(self.embedded_save_dir+file)
+                
+        ## Add agree and disagree distances
+        df = agree_disagree_distances.add_agree_disagree_distances(df)
         
+        col_order = []
+        for c in df.columns:
+            if c != "vector":
+                col_order.append(c)
+        col_order.append("vector")
+
+        df = df[col_order].clone()
+        ## Save the data
+        os.remove(self.embedded_save_dir+self.file_prefix+"complete.parquet")
+        df.write_parquet(self.embedded_save_dir+self.file_prefix+"complete.parquet")
+        
+        return df.clone()        
     
 class PawIndex:
     def __init__(
@@ -154,7 +180,7 @@ class PawIndex:
 
         self.vector_dir = self.embedding_dir+"config_"\
             +self.embedding_config_name+"/"
-        self.vector_files = os.listdir(self.vector_dir)
+        self.vector_file = os.listdir(self.vector_dir)[0]
         self.database_dir = self.db_save_dir+"/db_"\
             +self.embedding_config_name\
                 +self.index_config_name
@@ -166,15 +192,10 @@ class PawIndex:
         db = lancedb.connect(self.database_dir)
 
         ## Load the first data file
-        data = pl.read_parquet(self.vector_dir+self.vector_files[0])
+        data = pl.read_parquet(self.vector_dir+self.vector_file)
 
         ## Initialize a table in the database
         table = db.create_table("table_"+self.config_name, data=data)
-
-        ## Load the remaining data into the table, one file at a time
-        for i in range(1, len(self.vector_files)):
-            data = pl.read_parquet(self.vector_dir+self.vector_files[i])
-            table.add(data)
 
         ## Build the ANN Index
         ## Ignoring a UserWarning that is out of my control
