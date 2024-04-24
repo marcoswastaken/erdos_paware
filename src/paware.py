@@ -112,6 +112,7 @@ class PawEmbedding:
         )
 
         ## Combine the parquet files
+        if verbose: print("Combining parquet files...")
         files = os.listdir(self.embedded_save_dir)
         df = pl.read_parquet(self.embedded_save_dir+files[0])
         for f in files[1:]:
