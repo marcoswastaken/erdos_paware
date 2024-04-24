@@ -49,7 +49,7 @@ class PawEmbedding:
     def __init__(
             self,
             CONFIG_NAME: str,
-            RAW_DATA_PATH: str,
+            RAW_DATA_DIR: str,
             EMBEDDED_SAVE_DIR: str,
             BATCH_SIZE: int,
             CHUNK_WITH_METADATA: bool,
@@ -58,17 +58,15 @@ class PawEmbedding:
             ) -> None:
         
         self.config_name = CONFIG_NAME
-        self.raw_data_path = RAW_DATA_PATH
-        self.embedded_save_dir = EMBEDDED_SAVE_DIR+"/config_"\
+        self.raw_data_dir = RAW_DATA_DIR
+        self.embedded_save_dir = EMBEDDED_SAVE_DIR+"config_"\
             +self.config_name+"/"
         self.batch_size = BATCH_SIZE
         self.chunk_with_metadata = CHUNK_WITH_METADATA
         self.chunk_size = CHUNK_SIZE
         self.chunk_overlap_pct = CHUNK_OVERLAP_PCT
 
-        self.file_prefix = "vectorized_config_"+self.config_name+"_data_"
-
-    def embed_data(self, verbose: bool = False):
+    def embed_data(self, prefix:str = None, verbose: bool = False):
         '''
         This method is used to embed the data using the given configuration.
 
@@ -79,9 +77,17 @@ class PawEmbedding:
         Returns:
             None
         '''
+        if prefix:
+            file_prefix = "vectorized_"+prefix+"_data_"
+        else:
+            file_prefix = "vectorized_config_"+self.config_name+"_data_"
         if verbose: print("Loading and chunking...")
         ## Load raw data
-        data_raw = pl.read_parquet(self.raw_data_path)
+        data_files = os.listdir(self.raw_data_dir)
+        if prefix:
+            data_raw = pl.read_parquet(self.raw_data_dir+prefix+"_data.parquet")
+        else:
+            data_raw = pl.read_parquet(self.raw_data_path+data_files[0])
 
         ## Precprocess raw data
         data_preprocessed = preprocess.preprocess_data(DATA_RAW=data_raw)
@@ -108,24 +114,43 @@ class PawEmbedding:
             data_chunked=data_chunked,
             batch_size=self.batch_size,
             save_dir=self.embedded_save_dir,
-            file_prefix=self.file_prefix
+            file_prefix=file_prefix
         )
 
         ## Combine the parquet files
         if verbose: print("Combining parquet files...")
-        files = os.listdir(self.embedded_save_dir)
+        files = [f for f in os.listdir(self.embedded_save_dir) 
+                 if not f.endswith("complete.parquet")]  
+        
         df = pl.read_parquet(self.embedded_save_dir+files[0])
         for f in files[1:]:
             df = pl.concat([df, pl.read_parquet(self.embedded_save_dir+f)])
         
         df.write_parquet(
-            self.embedded_save_dir+self.file_prefix+"complete.parquet")
+            self.embedded_save_dir+file_prefix+"complete.parquet")
 
         for f in files:
             os.remove(self.embedded_save_dir+f)
 
         if verbose: print("... done vectorizing and saving.\n")
     
+    def embed_from_subs(self, subs_dir:str):
+        '''
+        This method is used to embed data from subreddits stored indivdually.
+
+        Parameters:
+            None
+        
+        Returns:
+            None
+        '''
+        files = os.listdir(subs_dir)
+        for f in files:
+            prefix = f.split("_")[0]
+            self.embed_data(prefix=prefix, verbose=True)
+        
+        return None
+
     def add_agree_disagree_distances(self):
         '''
         This method is used to add agree and disagree distances to the data.
@@ -137,20 +162,17 @@ class PawEmbedding:
                 None
         '''
         ## Load the data
-        file = os.listdir(self.embedded_save_dir)[0]
-        df = pl.read_parquet(self.embedded_save_dir+file)
-                
-        ## Add agree and disagree distances
-        df = agree_disagree_distances.add_agree_disagree_distances(df)
+        files = os.listdir(self.embedded_save_dir)
 
-        df = df[col_order].clone()
-        ## Save the data
-        os.remove(self.embedded_save_dir+self.file_prefix+"complete.parquet")
-        df.write_parquet(self.embedded_save_dir+self.file_prefix+"complete.parquet")
+        for f in files:
+            df = pl.read_parquet(self.embedded_save_dir+f)
+            df = agree_disagree_distances.add_agree_disagree_distances(df)
+            os.remove(self.embedded_save_dir+f)
+            df.write_parquet(self.embedded_save_dir+f)
         
-        return df.clone()
+        return None
 
-    def copy_agree_disagree_distances(self, file:str):
+    def copy_agree_disagree_distances(self, finished_dir:str):
         '''
         This method is used to copy agree and disagree distances from a file.
 
@@ -164,18 +186,15 @@ class PawEmbedding:
         '''
 
         ## Load the data
-        df_file = os.listdir(self.embedded_save_dir)[0]
-        df = pl.read_parquet(self.embedded_save_dir+df_file)
+        before_files = os.listdir(self.embedded_save_dir)
+        for f in before_files:
+            df_before = pl.read_parquet(self.embedded_save_dir+f)
+            df_before = agree_disagree_distances.copy_agree_disagree_distances(
+                file=finished_dir+f, df=df_before)
+            os.remove(self.embedded_save_dir+f)
+            df_before.write_parquet(self.embedded_save_dir+f)
         
-        ## Copy the distances
-        df = agree_disagree_distances.copy_agree_disagree_distances(
-            file=file, df=df)
-        
-        ## Save the data
-        os.remove(self.embedded_save_dir+self.file_prefix+"complete.parquet")
-        df.write_parquet(self.embedded_save_dir+self.file_prefix+"complete.parquet")
-        
-        return df.clone()        
+        return None        
     
 class PawIndex:
     def __init__(
@@ -202,7 +221,7 @@ class PawIndex:
 
         self.vector_dir = self.embedding_dir+"config_"\
             +self.embedding_config_name+"/"
-        self.vector_file = os.listdir(self.vector_dir)[0]
+        self.vector_files = os.listdir(self.vector_dir)
         self.database_dir = self.db_save_dir+"/db_"\
             +self.embedding_config_name\
                 +self.index_config_name
@@ -214,10 +233,15 @@ class PawIndex:
         db = lancedb.connect(self.database_dir)
 
         ## Load the first data file
-        data = pl.read_parquet(self.vector_dir+self.vector_file)
+        data = pl.read_parquet(self.vector_dir+self.vector_files[0])
 
         ## Initialize a table in the database
         table = db.create_table("table_"+self.config_name, data=data)
+
+        ## Load the rest of the data files
+        for f in self.vector_files[1:]:
+            data = pl.read_parquet(self.vector_dir+f)
+            table.add(data)
 
         ## Build the ANN Index
         ## Ignoring a UserWarning that is out of my control
