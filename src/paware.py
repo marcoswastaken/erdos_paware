@@ -288,6 +288,8 @@ class PawQuery:
             .refine_factor(self.refine_factor)\
             .to_polars()
         
+        result = result.sort(by="_distance").clone()
+
         return result
 
     def ask_standard_queries(self):
@@ -303,6 +305,8 @@ class PawQuery:
                 query_text = pl.lit(PawQuery.standard_queries[i])
             )
             results = pl.concat([results, next])
+        
+        result = result.sort(by="_distance").clone()
         
         results.write_parquet(self.query_file)
 
@@ -384,8 +388,7 @@ class PawScores:
             
             if query_text:
                 query_results = self.results\
-                    .filter(pl.col("query_text")==query_text)\
-                    .sort(by="_distance")
+                    .filter(pl.col("query_text")==query_text)
                 
                 query_score = 0
                 for j in range(query_results.shape[0]):
@@ -409,8 +412,7 @@ class PawScores:
             
             if query_text:
                 query_results = self.results\
-                    .filter(pl.col("query_text")==query_text)\
-                    .sort(by="_distance")
+                    .filter(pl.col("query_text")==query_text)
                 
                 query_score = 0
                 for j in range(query_results.shape[0]):
