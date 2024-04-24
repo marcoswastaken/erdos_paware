@@ -161,16 +161,14 @@ class PawEmbedding:
             pl.DataFrame
                 The data with the copied distances.
         '''
+
         ## Load the data
-        labeled_df = pl.read_parquet(file)
-        
-        ## Load the data
-        file = os.listdir(self.embedded_save_dir)[0]
-        df = pl.read_parquet(self.embedded_save_dir+file)
+        df_file = os.listdir(self.embedded_save_dir)[0]
+        df = pl.read_parquet(self.embedded_save_dir+df_file)
         
         ## Copy the distances
         df = agree_disagree_distances.copy_agree_disagree_distances(
-            labeled_df=labeled_df, df=df)
+            file=file, df=df)
         
         ## Save the data
         os.remove(self.embedded_save_dir+self.file_prefix+"complete.parquet")
@@ -328,8 +326,6 @@ class PawQuery:
                 query_text = pl.lit(PawQuery.standard_queries[i])
             )
             results = pl.concat([results, next])
-        
-        result = result.sort(by="_distance").clone()
         
         results.write_parquet(self.query_file)
 
