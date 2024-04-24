@@ -163,4 +163,34 @@ def add_agree_disagree_distances(df:pl.DataFrame):
         avg_reply_disagree_distance = pl.col("reply_disagree_distances")\
             .list.mean())
     
-    return df.clone()
+    col_order = []
+    for c in df.columns:
+        if c != "vector":
+            col_order.append(c)
+    col_order.append("vector")
+    
+    return df[col_order].clone()
+
+def copy_agree_disagree_distances(file:str, df:pl.DataFrame):
+    labeled_df = pl.read_parquet(file)
+
+    labeled_cols = ['reddit_name',
+                'agree_distance_avg', 
+                'disagree_distance_avg',
+                'reply_agree_distances',
+                'reply_disagree_distances',
+                'top_reply_agree_distance',
+                'top_reply_disagree_distance',
+                'avg_reply_agree_distance',
+                'avg_reply_disagree_distance']
+
+    df = df.join(labeled_df[labeled_cols], 
+                 on=["reddit_name"], how="inner")
+
+    col_order = []
+    for c in df.columns:
+        if c != "vector":
+            col_order.append(c)
+    col_order.append("vector")
+    
+    return df[col_order].clone()

@@ -141,14 +141,37 @@ class PawEmbedding:
                 
         ## Add agree and disagree distances
         df = agree_disagree_distances.add_agree_disagree_distances(df)
-        
-        col_order = []
-        for c in df.columns:
-            if c != "vector":
-                col_order.append(c)
-        col_order.append("vector")
 
         df = df[col_order].clone()
+        ## Save the data
+        os.remove(self.embedded_save_dir+self.file_prefix+"complete.parquet")
+        df.write_parquet(self.embedded_save_dir+self.file_prefix+"complete.parquet")
+        
+        return df.clone()
+
+    def copy_agree_disagree_distances(self, file:str):
+        '''
+        This method is used to copy agree and disagree distances from a file.
+
+        Parameters:
+            file: str
+                The path to the file from which to copy the distances.
+        
+        Returns:
+            pl.DataFrame
+                The data with the copied distances.
+        '''
+        ## Load the data
+        labeled_df = pl.read_parquet(file)
+        
+        ## Load the data
+        file = os.listdir(self.embedded_save_dir)[0]
+        df = pl.read_parquet(self.embedded_save_dir+file)
+        
+        ## Copy the distances
+        df = agree_disagree_distances.copy_agree_disagree_distances(
+            labeled_df=labeled_df, df=df)
+        
         ## Save the data
         os.remove(self.embedded_save_dir+self.file_prefix+"complete.parquet")
         df.write_parquet(self.embedded_save_dir+self.file_prefix+"complete.parquet")
