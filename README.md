@@ -40,7 +40,7 @@ Starting with the raw data, we performed some basic cleaning:
 
 We used the base version of the General Text Embeddings (GTE) model, which is based on the BERT framework. Documentation on HuggingFace: [link](https://huggingface.co/thenlper/gte-base).
 
-We chose this model because it seemed to be a reasonable size (0.22GB), it only requires and it allows embedding of texts up to 512 tokens in length. It performs especially well in clustering and retrieval compared to other open source sentence transformers that have fewer than 250M parameters: [link](https://huggingface.co/spaces/mteb/leaderboard).
+We chose this model because it seemed to be a reasonable size (0.22GB), it only requires ??@Marcos and it allows embedding of texts up to 512 tokens in length. It performs especially well in clustering and retrieval compared to other open source sentence transformers that have fewer than 250M parameters: [link](https://huggingface.co/spaces/mteb/leaderboard).
 
 Moreover, part of its training was done using Reddit data, which added to its appeal.
 
@@ -80,7 +80,7 @@ We fixed the indexing parameters, and varied the retrieval parameters. Though, i
 
 ### Retrieval
 
-Besides the query parameters that are built into our ANN index, we varied other pre-rtrieval and post-retrieval variables to try and improve our overall results.
+Besides the query parameters that are built into our ANN index, we varied other pre-retrieval and post-retrieval variables to try and improve our overall results.
 
 #### Pre-retrieval
 
@@ -121,10 +121,22 @@ While times is easy enough to measure, we needed to develop some tools to measur
 
 ### Getting Labeled Data
 
+To establish a baseline for evaluating result ranking, we manually labeled a subset of results to establish an initial metric of relevance. To do this, we created two queries for each of the thirteen datasets in our training set, and labeled the top 20 results retrieved for each query. Results were labeled as:
+
+1. Relevant to the query
+2. Related to the query, but not relevant to the query
+3. Not related to the query
+
+Results that were collectively rated as 1 were considered relevant results. This manually labeled data was then used to quantify results.
+
 ### Quantifying Results
+
+We used three metrics for ranking results. 
 
 #### Reciprocal Rank
 
 #### Modified Extended Reciprocal Rank
+
+#### NDCG (modified)
 
 ## Results and Conclusion
