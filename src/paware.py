@@ -335,7 +335,7 @@ class PawQuery:
             self.prefilter = "(is_short_question = False)"
         elif self.filter_submissions:
             self.prefilter = "(aware_post_type = 'comment')"
-            
+
     def ask_a_query(self, query: str):
         ## Embed the query
         query_embedding = PawQuery.embedding_model.embed_query(query)
@@ -525,6 +525,7 @@ class PawScores:
                     self.rr_scores[query_text] = 0
 
     def ndcg_calc(self, array):
+
         ndcg = np.zeros(len(array))
         ndcg_ideal = np.zeros(len(array))
     
@@ -541,42 +542,67 @@ class PawScores:
             for j in range(len(sorted_arr)):
                 ndcg_ideal[i] = ndcg_ideal[i]+rel_ideal[j]/math.log2(j+2)+1e-8
 
-    #Add the 1e-8 to control division by 0 error. This results when all the entries are irrelevant
+        # Add the 1e-8 to control division by 0 error. 
+        # This results when all the entries are irrelevant.
     
         return np.mean(np.divide(ndcg,ndcg_ideal))
     
     def compute_dcg_scores(self):
-        #Apply thresolding, chuck out everything from the 00 and 02 config results that are not relevant
+        # Apply thresolding, chuck out everything from the 00 and 02 config 
+        # results that are not relevant
         self.old_rating = [1,2,3]
         self.new_rating = [1,0,0]
-        self.labeled_thrs_df = self.labeled_df.with_columns(pl.when(pl.col("relevance_rating") == self.old_rating[1]).then(self.new_rating[1])\
-                       .when(pl.col("relevance_rating") == self.old_rating[2]).then(self.new_rating[2])\
-    .otherwise(pl.col("relevance_rating")).alias("relevance_rating")
+        self.labeled_thrs_df = self.labeled_df.with_columns(
+            pl.when(pl.col("relevance_rating") == self.old_rating[1])\
+            .then(self.new_rating[1])\
+            .when(pl.col("relevance_rating") == self.old_rating[2])\
+            .then(self.new_rating[2])\
+            .otherwise(pl.col("relevance_rating")).alias("relevance_rating")
 )
-        #labeled_thrs_df is the thresolded df now, now we remove all the entries that have 0 relevance rating.
-        self.labeled_thrs_df = self.labeled_thrs_df.filter(pl.col("relevance_rating") == 1)
+        ## labeled_thrs_df is the thresolded df now, now we remove all the entries
+        ## that have 0 relevance rating.
+        self.labeled_thrs_df = self.labeled_thrs_df.filter(
+            pl.col("relevance_rating") == 1)
     
-        #We would like to compare this "relevant" dataframe with our new query reply pair, all matching relevant replies get a score of 1, everything else is set to 0
+        ## We would like to compare this "relevant" dataframe with our new query
+        ## reply pair, all matching relevant replies get a score of 1, everything else is set to 0
 
         for i in range(self.results.shape[0]):
             query_text = self.results[i]["query_text"][0]
 
             if query_text:
         
-               #First, we filter out the dataframe based on the specific query, both for new (self.results) and labelled, thresolded one (self.labeled_thrs_df)
-               self.results_query = self.results.filter(pl.col("query_text") == query_text)
-               self.df_lab = self.labeled_thrs_df.filter(pl.col("query_text") == query_text)
+               # First, we filter out the dataframe based on the specific query, 
+               ## both for new (self.results) and labelled, thresolded one 
+               ## (self.labeled_thrs_df)
+               self.results_query = self.results.filter(
+                   pl.col("query_text") == query_text)
+               
+               self.df_lab = self.labeled_thrs_df.filter(
+                   pl.col("query_text") == query_text)
+               
                self.relevant_names = self.df_lab["reddit_name"].to_list()
 
-               #compare if the replies from redditors with name "reddit_name", in the new config is present in the list "self.relevant names". If they do,
-               #we score it 1, otherwise we score it 0
+               #compare if the replies from redditors with name "reddit_name", 
+               ## in the new config is present in the list "self.relevant 
+               ## names". If they do, we score it 1, otherwise we score it 0
     
-               self.df_r = self.results_query.with_columns(pl.col("reddit_name").is_in(self.relevant_names).alias("is_relevant"))
-               #is_relevant is now a boolean columnn, consisting of True and False. For numerically socring it, we substitute True = 1, False = 0
-               self.df_r = self.df_r.with_columns(pl.when(pl.col("is_relevant") == True).then(1)\
-                       .when(pl.col("is_relevant") == False).then(0)\
-    .otherwise(pl.col("is_relevant")).alias("relevance_score"))
+               self.df_r = self.results_query.with_columns(
+                    pl.col("reddit_name").is_in(self.relevant_names)\
+                    .alias("is_relevant"))
+               
+               # is_relevant is now a boolean columnn, consisting of True and 
+               ## False. For numerically socring it, we substitute True = 1, 
+               ## False = 0
+               self.df_r = self.df_r.with_columns(
+                    pl.when(pl.col("is_relevant") == True)\
+                    .then(1)\
+                    .when(pl.col("is_relevant") == False)\
+                    .then(0)\
+                    .otherwise(pl.col("is_relevant")).alias("relevance_score"))
+               
                self.rating = self.df_r["relevance_score"].to_numpy()
+               
                self.dcg_scores[query_text] = self.ndcg_calc(self.rating)
 
     def get_mext_rr_scores(self):
