@@ -4,12 +4,12 @@
 
 Given an arbitrary user query and a dataset of human-generated content, build an algorithm to identify and rank the relevant content in the dataset, such that the match set can be retrieved quickly and accurately
 
-We know that the eventual application for the results of our project is use in a Retrievel-Agumented Generation (RAG) pipeline. This [recent survey paper](https://arxiv.org/abs/2312.10997), describing the current state of RAG for Large Languange Models (LLMs) helped provide some insight into what tools might be a good fit for our particular task and data.
+We know that the eventual application for the results of our project is use in a Retrieval-Augmented Generation (RAG) pipeline. This [recent survey paper](https://arxiv.org/abs/2312.10997), describing the current state of RAG for Large Language Models (LLMs) helped provide some insight into what tools might be a good fit for our particular task and data.
 
 The main steps in RAG are:
 
 1. Indexing documents
-2. Retrieving the most relevent documents, given a user query
+2. Retrieving the most relevant documents, given a user query
 3. Generating output using a LLM
 
 ## The Dataset
@@ -20,18 +20,20 @@ The raw data provided to us consists of 5,528,298 posts from Reddit, from 34 sub
 
 For this project, we are focussed on the first two steps of the RAG process: Indexing and retrieval.
 
+![Image Description](flow_chart.png)
+
 ### Indexing
 
 #### Preprocessing of Data
 
-Starting with the raw data, we perfomed some basic cleaning:
+Starting with the raw data, we performed some basic cleaning:
 
 * Dropped rows with `reddit_text` values of `"[deleted]"` or `"removed"`.
 * Dropped rows that were deemed to be likely bots or memes. 
-  * This was done by filtering out any rows with `reddit_text` values that were at least 35 characters long, and appeared more than 7 times. We did not want to immediately drop shorter common phrases, in case they might be useful later (see Medadata Engineering).
+  * This was done by filtering out any rows with `reddit_text` values that were at least 35 characters long, and appeared more than 7 times. We did not want to immediately drop shorter common phrases, in case they might be useful later (see Using Engineered Metadata).
 * Handled empty `reddit_text` values.
-  * There were hardly any comments (as opposed to submissions) that had emtpy values. Few enough that they could be inspected manually. It appeared that these posts had been either deleted, or edited so that they were empty by the original author. These rows were dropped.
-  * A cursory inspection of submissions with empty values revealed that the `reddit_title` was a proxiy for the `reddit_text`. So, we replaced the empyter `reddit_text` with the `reddit_title` in these instances.
+  * There were hardly any comments (as opposed to submissions) that had empty values. Few enough that they could be inspected manually. It appeared that these posts had been either deleted, or edited so that they were empty by the original author. These rows were dropped.
+  * A cursory inspection of submissions with empty values revealed that the `reddit_title` was a proxy for the `reddit_text`. So, we replaced the empty `reddit_text` with the `reddit_title` in these instances.
 
 
 #### Embedding Model
@@ -53,7 +55,7 @@ During embedding we considered the following parameters:
 * chunk_size: The maximum length of text to embed as a document
 * chunk_overlap: Whenever a document needed to be broken into chunks, how much should they overlap
 
-We also experemented with attaching metadata to chunks prior to embedding. To do this, we simply add the subreddit title (or an approximation) to the start of a text chunk before embedding. For example, if there is a comment in the FedExers that says “I really like working here because...” then we would append “FedEx” to the start of the chunk and embed “FedEx \n\n I really like working here because...”
+We also experimented with attaching metadata to chunks prior to embedding. To do this, we simply add the subreddit title (or an approximation) to the start of a text chunk before embedding. For example, if there is a comment in the FedExers that says “I really like working here because...” then we would append “FedEx” to the start of the chunk and embed “FedEx \n\n I really like working here because...”
 
 Our intuition was that, in the cases where a post does not explicitly include the name of the company they are discussing, we might infer that information from the subreddit and that this might nudge that vector closer to our query. For example, If we ask “Why do employees like working at Disney?” and “Why do employees like working at FedEx?” our hope is that the addition of metadata makes it more likely that the above comment shows up higher in the results for the FedEx query, and maybe lower in the results for the Disney query.
 
@@ -63,7 +65,7 @@ We chose LanceDB ([link](https://lancedb.github.io/lancedb/)) to handle our vect
 
 ##### ANN Index
 
-LanceDB provides a combination of and inverted file index (IVF) and product quantization (PQ) to build an approximat nearest neighbors (ANN) index.
+LanceDB provides a combination of and inverted file index (IVF) and product quantization (PQ) to build an approximate nearest neighbors (ANN) index.
 
 Both part of the IVF-PQ index can be fine tuned by adjusting the the following parameters:
 
@@ -78,15 +80,15 @@ We fixed the indexing parameters, and varied the retrieval parameters. Though, i
 
 ### Retrieval
 
-Besides the query parameters that are built into our ANN index, we varied other pre-rtrieval and post-retrieval variables to try and improve our overal results.
+Besides the query parameters that are built into our ANN index, we varied other pre-rtrieval and post-retrieval variables to try and improve our overall results.
 
 #### Pre-retrieval
 
-##### Filtering
+##### Prefiltering
 
 While labeling data, we noticed a common type of "related but not relevant" result: a `reddit_text` that posed a question similar to the query itself.
 
-Most of the time, these texts came from a `submission` (as opposed to a comment). So, one way to try and elevate more relevant reults might be to omit these from the vector search. This is easy enough, given that this information is contained in our original metadata.
+Most of the time, these texts came from a `submission` (as opposed to a comment). So, one way to try and elevate more relevant results might be to omit these from the vector search. This is easy enough, given that this information is contained in our original metadata.
 
 Less frequently, but still enough to be noticed, a `comment` would exhibit this property. To try and curb their impact, we engineered a metadata column `is_short_question` to try and identify all `reddit_text` examples that posed short questions (and thus were unlikely to provide useful information for answering those questions) so that they could also be filtered out before the search.
 
@@ -95,16 +97,16 @@ Less frequently, but still enough to be noticed, a `comment` would exhibit this 
 
 In order to improve the ranking of results after retrieval, we engineered some aditional metadata that might allow us to leverage information provided by the content of replies.
 
-##### Metadata Engineering
+##### Using Engineered Metadata
 
-The two metadata features we were able two implement are:
+We engineered two type of metadata:
 
-1. A measure of `sentiment` 
-2. A  measure of `agree_distance` (and `disagree_distance`)
+1. A measure of `sentiment` of replies and,
+2. A  measure of `agree_distance` (and `disagree_distance`) for replies.
 
 In the case of `reply_sentiment`, our hypotheses was that a post with more positive replies would be more likely to contain useful information. We used ....
 
-In the case of  `agree_distance` we measureded the distance between each `reddit_text` and a set of "agree statemtnets". Then, whenever a submission or comment had replies, we added the `top_reply_agree_distance` and the `avg_reply_agree_distance`. Our hyposthessis was that posts with replies that were closer to "agree" statements would be more likely to contain relevant information. Similarly, posts with replies that were closer to "disagree" statements would be less likely to be relevant.
+In the case of  `agree_distance` we measured the distance between each `reddit_text` and a set of "agree statements". Then, whenever a submission or comment had replies, we added the `top_reply_agree_distance` and the `avg_reply_agree_distance`. Our hypothesis was that posts with replies that were closer to "agree" statements would be more likely to contain relevant information. Similarly, posts with replies that were closer to "disagree" statements would be less likely to be relevant.
 
 We had other ideas that we would like to implement, but they are relegated to future work.
 
