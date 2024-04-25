@@ -136,7 +136,7 @@ class PawEmbedding:
     
     def embed_from_subs(self, subs_dir:str):
         '''
-        This method is used to embed data from subreddits stored indivdually.
+        This method is used to embed data from subreddits stored individually.
 
         Parameters:
             None
@@ -314,6 +314,10 @@ class PawQuery:
         self.rerank_sentiment = RERANK_SENTIMENT
         self.rerank_agree_distance = RERANK_AGREE_DISTANCE
         self.rerank_disagree_distance = RERANK_DISAGREE_DISTANCE
+        ## TODO: Add reranking by sentiment then agree distance
+        ## TODO: Add reranking by sentiment then disagree distance
+        ## TODO: Add reranking by agree distance then sentiment
+        ## TODO: Add reranking by disagree distance then sentiment
 
         self.db_table = "table_"+self.config_name
         self.query_file = self.query_save_dir\
@@ -356,6 +360,7 @@ class PawQuery:
         
         ## Rerank the results
         if self.rerank_sentiment:
+            ## TODO: Add reranking by sentiment
             pass
         elif self.rerank_agree_distance:
             close_to_agree = result.filter(
@@ -390,6 +395,7 @@ class PawQuery:
             result = pl.concat([far_from_disagree, 
                                 no_disagree_data, 
                                 close_to_disagree])
+        
         else:
             result = result.sort(by="_distance")
 
