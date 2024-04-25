@@ -323,20 +323,77 @@ class PawQuery:
         self.db = lancedb.connect(self.db_dir)
         self.table = self.db.open_table(self.db_table)
 
+        self.prefilter = None
+
+        if self.filter_short_questions:
+            if self.filter_submissions:
+                self.prefilter = "(is_short_question = False) AND (aware_post_type = 'comment')"
+            self.prefilter = "(is_short_question = False)"
+        elif self.filter_submissions:
+            self.prefilter = "(aware_post_type = 'comment')"
+        
     def ask_a_query(self, query: str):
         ## Embed the query
         query_embedding = PawQuery.embedding_model.embed_query(query)
 
-        result = self.table.search(query_embedding)\
-            .metric(self.metric)\
-            .limit(self.limit)\
-            .nprobes(self.nprobes)\
-            .refine_factor(self.refine_factor)\
-            .to_polars()
+        ## Search with prefilter
+        if self.filter_submissions or self.filter_short_questions:
+            result = self.table.search(query_embedding)\
+                .where(self.prefilter, prefilter=True)\
+                .metric(self.metric)\
+                .limit(self.limit)\
+                .nprobes(self.nprobes)\
+                .refine_factor(self.refine_factor)\
+                .to_polars()
+        ## Search without prefilter
+        else:
+            result = self.table.search(query_embedding)\
+                .metric(self.metric)\
+                .limit(self.limit)\
+                .nprobes(self.nprobes)\
+                .refine_factor(self.refine_factor)\
+                .to_polars()
         
-        result = result.sort(by="_distance").clone()
+        ## Rerank the results
+        if self.rerank_sentiment:
+            pass
+        elif self.rerank_agree_distance:
+            close_to_agree = result.filter(
+                (pl.col("avg_reply_agree_distance")>0) 
+                & (pl.col("avg_reply_agree_distance")<=0.25))\
+                    .sort(by="avg_reply_agree_distance")
+            
+            no_agree_data = result.filter(
+                pl.col("avg_reply_agree_distance")==0)\
+                    .sort(by="_distance")
 
-        return result
+            far_from_agree = result.filter(
+                pl.col("avg_reply_agree_distance")>0.25)\
+                    .sort(by="_distance")
+            
+            result = pl.concat([close_to_agree, no_agree_data, far_from_agree])
+
+        elif self.rerank_disagree_distance:
+            close_to_disagree = result.filter(
+                (pl.col("avg_reply_disagree_distance")>0) 
+                & (pl.col("avg_reply_disagree_distance")<=0.25))\
+                    .sort(by="avg_reply_disagree_distance", descending=True)
+            
+            no_disagree_data = result.filter(
+                pl.col("avg_reply_disagree_distance")==0)\
+                    .sort(by="_distance")
+
+            far_from_disagree = result.filter(
+                pl.col("avg_reply_disagree_distance")>0.25)\
+                    .sort(by="_distance", descending=True)
+            
+            result = pl.concat([far_from_disagree, 
+                                no_disagree_data, 
+                                close_to_disagree])
+        else:
+            result = result.sort(by="_distance")
+
+        return result.clone()
 
     def ask_standard_queries(self):
         results = self.ask_a_query(PawQuery.standard_queries[0])
