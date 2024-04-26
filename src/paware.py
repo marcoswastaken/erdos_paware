@@ -48,6 +48,19 @@ class PawEmbedding:
         
         Returns:
             None
+
+        Methods:
+            embed_data(prefix:str = None, verbose: bool = False)
+                This method is used to embed the data.
+            embed_from_subs(subs_dir:str)
+                This method is used to embed data from subreddits stored 
+                individually.
+            add_agree_disagree_distances()
+                This method is used to add agree and disagree distances to the 
+                data.
+            copy_agree_disagree_distances(finished_dir:str)
+                This method is used to copy agree and disagree distances from a 
+                file.
     '''
 
     def __init__(
@@ -202,13 +215,47 @@ class PawEmbedding:
         return None        
     
 class PawIndex:
+    '''
+    This class is used to index data using a given configuration.
+
+    Generally this will work with any set of files in the embedding directory, 
+    but it is designed to work with the output of the PawEmbedding class.
+
+    Parameters:
+        EMBEDDING_CONFIG_NAME: str
+            The name of the embedding configuration to be indexed.
+        EMBEDDING_DIR: str
+            The directory where the embedded data is saved.
+        INDEX_CONFIG_NAME: str
+            The name of the index configuration.
+        DB_SAVE_DIR: str
+            The directory where the database will be saved.
+        METRIC: str
+            The metric to be used for the index. Default is "cosine".
+        NUM_PARTITIONS: int
+            The number of Voronoi partitions to be used for the inverted file 
+            index.
+        NUM_SUB_VECTORS: int
+            The number of sub-vectors to be used for the product quantization 
+            index.
+        ACCELERATOR: str
+            The accelerator to be used for the index. 'mps' for metal, 
+            otherwise None.
+        
+        Returns:
+            None
+
+        Methods:
+            index_data(verbose: bool = False)
+                This method is used to index the data.
+    '''
     def __init__(
             self,
             EMBEDDING_CONFIG_NAME: str,
             EMBEDDING_DIR: str,
             INDEX_CONFIG_NAME: str,
             DB_SAVE_DIR: str,
-            METRIC: str,
+            METRIC: str = "cosine",
             NUM_PARTITIONS: int = 1024,
             NUM_SUB_VECTORS: int = 96,
             ACCELERATOR: str = None,
@@ -260,6 +307,46 @@ class PawIndex:
             )
 
 class PawQuery:
+    '''
+    This class is used to query data using a given configuration.
+
+    Parameters:
+        CONFIG_NAME: str
+            The name of the configuration to be used.
+        DB_DIR: str
+            The directory where the database is saved.
+        QUERY_SAVE_DIR: str
+            The directory where the query results will be saved.
+        QUERY_NAME: str
+            The name of the query.
+        METRIC: str
+            The metric to be used for the query.
+        LIMIT: int
+            The number of results to be returned.
+        NPROBES: int
+            The number of probes to be used for the query.
+        REFINE_FACTOR: int
+            The refine factor to be used for the query.
+        FILTER_SUBMISSIONS: bool
+            Whether to filter submissions.
+        FILTER_SHORT_QUESTIONS: bool
+            Whether to filter short questions.
+        RERANK_SENTIMENT: bool
+            Whether to rerank by sentiment.
+        RERANK_AGREE_DISTANCE: bool
+            Whether to rerank by agree distance.
+        RERANK_DISAGREE_DISTANCE: bool
+            Whether to rerank by disagree distance.
+        
+        Returns:
+            None
+
+        Methods:
+            ask_a_query(query: str)
+                This method is used to ask a query.
+            ask_standard_queries()
+                This method is used to ask standard queries.
+    '''
     standard_queries = [
     "How do General Motors employees feel about RTO?",
     "What kind of benefits does GM offer?",
@@ -416,6 +503,30 @@ class PawQuery:
         return results
     
 class PawScores:
+    '''
+    This class is used to compute scores for the results of a query.
+
+    Parameters:
+        RESULTS_FILE_PATH: str
+            The path to the file containing the results of a query.
+        
+        Returns:
+            None
+
+        Methods:
+            compute_mext_rr_scores()
+                This method is used to compute the MEXT-RR scores.
+            compute_rr_scores()
+                This method is used to compute the RR scores.
+            compute_dcg_scores()
+                This method is used to compute the DCG scores.
+            get_mext_rr_scores()
+                This method is used to get the MEXT-RR scores.
+            get_rr_scores()
+                This method is used to get the RR scores.
+            get_dcg_scores()
+                This method is used to get the DCG scores.
+    '''
     standard_queries = [
     "How do General Motors employees feel about RTO?",
     "What kind of benefits does GM offer?",
