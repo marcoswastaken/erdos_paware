@@ -16,6 +16,10 @@ from adding_metadata import agree_disagree_distances
 ## For data handling
 import polars as pl
 
+## For math
+import numpy as np
+import math
+
 ## For embedding models
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
