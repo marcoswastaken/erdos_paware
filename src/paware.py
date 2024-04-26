@@ -87,7 +87,7 @@ class PawEmbedding:
             file_prefix = "vectorized_config_"+self.config_name+"_data_"
         if verbose: print("Loading and chunking...")
         ## Load raw data
-        data_files = os.listdir(self.raw_data_dir)
+        data_files = [f for f in os.listdir(self.raw_data_dir) if f[0]!="."]
         if prefix:
             data_raw = pl.read_parquet(self.raw_data_dir+prefix+"_data.parquet")
         else:
@@ -124,7 +124,7 @@ class PawEmbedding:
         ## Combine the parquet files
         if verbose: print("Combining parquet files...")
         files = [f for f in os.listdir(self.embedded_save_dir) 
-                 if not f.endswith("complete.parquet")]  
+                 if (not f.endswith("complete.parquet")) and (f[0]!=".")]  
         
         df = pl.read_parquet(self.embedded_save_dir+files[0])
         for f in files[1:]:
@@ -148,7 +148,7 @@ class PawEmbedding:
         Returns:
             None
         '''
-        files = os.listdir(subs_dir)
+        files = [f for f in os.listdir(subs_dir) if f[0]!="."]
         for f in files:
             prefix = f.split("_")[0]
             self.embed_data(prefix=prefix, verbose=True)
@@ -166,7 +166,7 @@ class PawEmbedding:
                 None
         '''
         ## Load the data
-        files = os.listdir(self.embedded_save_dir)
+        files = [f for f in os.listdir(self.embedded_save_dir) if f[0]!="."]
 
         for f in files:
             df = pl.read_parquet(self.embedded_save_dir+f)
@@ -190,7 +190,7 @@ class PawEmbedding:
         '''
 
         ## Load the data
-        before_files = os.listdir(self.embedded_save_dir)
+        before_files = [f in f os.listdir(self.embedded_save_dir) if f[0]!="."]
         for f in before_files:
             df_before = pl.read_parquet(self.embedded_save_dir+f)
             df_before = agree_disagree_distances.copy_agree_disagree_distances(
@@ -225,7 +225,8 @@ class PawIndex:
 
         self.vector_dir = self.embedding_dir+"config_"\
             +self.embedding_config_name+"/"
-        self.vector_files = os.listdir(self.vector_dir)
+        self.vector_files = [f for f in os.listdir(self.vector_dir) 
+                             if f[0]!="."]
         self.database_dir = self.db_save_dir+"/db_"\
             +self.embedding_config_name\
                 +self.index_config_name
@@ -335,7 +336,8 @@ class PawQuery:
 
         if self.filter_short_questions:
             if self.filter_submissions:
-                self.prefilter = "(is_short_question = False) AND (aware_post_type = 'comment')"
+                self.prefilter = "(is_short_question = False) AND"+\
+                    " (aware_post_type = 'comment')"
             self.prefilter = "(is_short_question = False)"
         elif self.filter_submissions:
             self.prefilter = "(aware_post_type = 'comment')"
@@ -569,7 +571,8 @@ class PawScores:
             pl.col("relevance_rating") == 1)
     
         ## We would like to compare this "relevant" dataframe with our new query
-        ## reply pair, all matching relevant replies get a score of 1, everything else is set to 0
+        ## reply pair, all matching relevant replies get a score of 1, 
+        ## everything else is set to 0
 
         for i in range(self.results.shape[0]):
             query_text = self.results[i]["query_text"][0]
