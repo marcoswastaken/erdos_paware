@@ -12,6 +12,7 @@ import warnings
 from data_processing import preprocess, chunk, vectorize
 from evaluating_results import process_labels
 from adding_metadata import agree_disagree_distances
+from query_tools import reranking
 
 ## For data handling
 import polars as pl
@@ -443,43 +444,13 @@ class PawQuery:
         
         ## Rerank the results
         if self.rerank_sentiment:
-            ## TODO: Add reranking by sentiment
-            pass
-        elif self.rerank_agree_distance:
-            close_to_agree = result.filter(
-                (pl.col("avg_reply_agree_distance")>0) 
-                & (pl.col("avg_reply_agree_distance")<=0.25))\
-                    .sort(by="avg_reply_agree_distance")
-            
-            no_agree_data = result.filter(
-                pl.col("avg_reply_agree_distance")==0)\
-                    .sort(by="_distance")
-
-            far_from_agree = result.filter(
-                pl.col("avg_reply_agree_distance")>0.25)\
-                    .sort(by="_distance")
-            
-            result = pl.concat([close_to_agree, no_agree_data, far_from_agree])
-
-        elif self.rerank_disagree_distance:
-            close_to_disagree = result.filter(
-                (pl.col("avg_reply_disagree_distance")>0) 
-                & (pl.col("avg_reply_disagree_distance")<=0.25))\
-                    .sort(by="avg_reply_disagree_distance", descending=True)
-            
-            no_disagree_data = result.filter(
-                pl.col("avg_reply_disagree_distance")==0)\
-                    .sort(by="_distance")
-
-            far_from_disagree = result.filter(
-                pl.col("avg_reply_disagree_distance")>0.25)\
-                    .sort(by="_distance", descending=True)
-            
-            result = pl.concat([far_from_disagree, 
-                                no_disagree_data, 
-                                close_to_disagree])
-        
-        else:
+            result = reranking.rerank_by_sentiment(result)
+        if self.rerank_agree_distance:
+            result = reranking.rerank_by_agree_distance(result)
+        if self.rerank_disagree_distance:
+            result = reranking.rerank_by_disagree_distance(result)
+        if not self.rerank_sentiment and not self.rerank_agree_distance\
+            and not self.rerank_disagree_distance:
             result = result.sort(by="_distance")
 
         return result.clone()
