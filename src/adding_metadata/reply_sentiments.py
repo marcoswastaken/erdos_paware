@@ -1,70 +1,81 @@
-import polars as pl
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+import os
+import sys
+import time
+import glob
+import pickle
+import shutil
+import gc
 import torch
-from datasets import Dataset
-torch.cuda.empty_cache()
+import torch.nn as nn
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+import numpy as np
+import pandas as pd
+import polars as pl
+from pathlib import Path
 
-# Ensure the GPU is available
-device = "cuda" if torch.cuda.is_available() else "cpu"
+MODEL = "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis"
 
-# Load the tokenizer and model
-tokenizer = AutoTokenizer.from_pretrained("mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis")
-model = AutoModelForSequenceClassification.from_pretrained("mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis").to(device)
+class TextLoader(Dataset):
+    def __init__(self, file, tokenizer):
+        df = pd.read_parquet(file)
+        print('File name', file)
+        print('Number of records in file', len(df))
+        self.file = tokenizer(list(df['reddit_text']), padding=True, truncation=True, max_length=64, return_tensors='pt')   
+        self.file = self.file['input_ids']
 
-# Set up the sentiment analysis pipeline
-nlp = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer, device=0 if device == "cuda" else -1)
+    def __len__(self):
+        return len(self.file)
 
+    def __getitem__(self, idx):
+        return self.file[idx]
 
-def batch_sentiment(texts):
-    """Process sentiment analysis in batches using datasets to utilize GPU more efficiently."""
-    if not texts:
-        return ['null'] * len(texts)  # Handle empty inputs
+class SentimentModel(nn.Module):
+    def __init__(self):
+        super(SentimentModel, self).__init__()
+        self.model = AutoModelForSequenceClassification.from_pretrained(MODEL)
 
-    # Trimming each text to 64 characters
-    trimmed_texts = [text[:64] for text in texts]
+    def forward(self, input):
+        return self.model(input)
 
-    text_dataset = Dataset.from_dict({'text': trimmed_texts})
+# Load tokenizer and model
+tokenizer = AutoTokenizer.from_pretrained(MODEL)
+model = SentimentModel()
+device_staging = 'cuda:0' if torch.cuda.device_count() > 1 else 'cuda'
+model = model.to(device_staging)
 
-    def process_sentiment(batch):
-        # The `batch['text']` is a list of texts
-        processed_texts = nlp(batch['text'])
-        return {'sentiment': [label_to_score(res['label']) for res in processed_texts]}
+def get_all_files(path):
+    return list(Path(path).glob("split_*.parquet"))
 
-    # Batch processing
-    sentiment_dataset = text_dataset.map(process_sentiment, batched=True, batch_size=8)
-    return [item['sentiment'] for item in sentiment_dataset]
+def interpret_logits(npy_file):
+    logits = np.load(npy_file, allow_pickle=True)
+    sentiments = [np.argmax(logit) if np.argmax(logit) == 0 else (-1 if np.argmax(logit) == 1 else 0) for batch in logits for logit in batch]
+    return sentiments
 
-# Convert labels to numerical scores
-def label_to_score(label):
-    if label == 'negative' or 'NEGATIVE':
-        return -1  # Negative
-    elif label == 'neutral':
-        return 0   # Neutral
-    elif label == 'positive' or 'POSITIVE':
-        return 1   # Positive
+def update_dataframe_with_sentiments(base_dir, parquet_path, npy_file_path):
+    df = pd.read_parquet(parquet_path)
+    sentiments = interpret_logits(npy_file_path)
+    df['text_sentiment'] = sentiments
+    df.to_parquet(parquet_path)
 
-def add_text_and_summed_sentiments(df: pl.DataFrame) -> pl.DataFrame:
-    """
-    Add 'text_sentiment' and 'summed_sentiments' columns to a DataFrame based on sentiment analysis of the 'reddit_text' column.
-    """
-    # Add 'text_sentiment' based on 'reddit_text'
-    texts = df['reddit_text'].to_list()
-    sentiments = batch_sentiment(texts)
-    df = df.with_columns(pl.Series("text_sentiment", sentiments))
+def combine_parquet_files(base_dir, output_file):
+    search_pattern = os.path.join(base_dir, "split_*.parquet")
+    parquet_files = glob.glob(search_pattern)
+    table_list = [pq.read_table(parquet_path) for parquet_path in parquet_files if parquet_files]
+    if table_list:
+        combined_table = pa.concat_tables(table_list)
+        pq.write_table(combined_table, output_file, compression='zstd')
+    else:
+        print("No Parquet files found in the directory.")
 
-    # Calculate 'summed_sentiments' based on 'reply_ids' and new 'text_sentiment'
-    summed_sentiments = []
-    for reply_ids in df["reply_ids"]:
-        if reply_ids is not None:
-            # Find matching 'reddit_name' in 'reply_ids' and sum their 'text_sentiment'
-            filter_mask = df["reddit_name"].is_in(reply_ids)
-            filtered_df = df.filter(filter_mask)
-            total_sentiment = filtered_df["text_sentiment"].sum()
-            summed_sentiments.append(total_sentiment)
-        else:
-            summed_sentiments.append(0)  # If no reply_ids, sum is 0
-
-    # Add the 'summed_sentiments' column
-    df = df.with_columns(pl.Series("summed_sentiments", summed_sentiments))
-
-    return df
+def add_summed_sentiments(df):
+    replies_agg = df.groupby("reddit_parent_id").agg([
+        pl.sum("text_sentiment").alias("summed_sentiments"),
+        (pl.sum("text_sentiment").abs()).alias("absolute_summed_sentiment")
+    ]).rename({"reddit_parent_id": "reddit_name"})
+    result_df = df.join(replies_agg, on="reddit_name", how="left")
+    result_df = result_df.with_columns([
+        pl.col("summed_sentiments").fill_null(0).cast(int),
+        pl.col("absolute_summed_sentiment").fill_null(0).cast(pl.Int32)
+    ])
+    return result_df
