@@ -190,7 +190,8 @@ class PawEmbedding:
         '''
 
         ## Load the data
-        before_files = [f in f os.listdir(self.embedded_save_dir) if f[0]!="."]
+        before_files = [f for f in os.listdir(self.embedded_save_dir) 
+                        if f[0]!="."]
         for f in before_files:
             df_before = pl.read_parquet(self.embedded_save_dir+f)
             df_before = agree_disagree_distances.copy_agree_disagree_distances(
