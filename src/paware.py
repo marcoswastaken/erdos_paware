@@ -408,10 +408,6 @@ class PawQuery:
         self.rerank_sentiment = RERANK_SENTIMENT
         self.rerank_agree_distance = RERANK_AGREE_DISTANCE
         self.rerank_disagree_distance = RERANK_DISAGREE_DISTANCE
-        ## TODO: Add reranking by sentiment then agree distance
-        ## TODO: Add reranking by sentiment then disagree distance
-        ## TODO: Add reranking by agree distance then sentiment
-        ## TODO: Add reranking by disagree distance then sentiment
 
         self.db_table = "table_"+self.config_name
         self.query_file = self.query_save_dir\
@@ -435,12 +431,21 @@ class PawQuery:
         ## Embed the query
         query_embedding = PawQuery.embedding_model.embed_query(query)
 
-        result = self.table.search(query_embedding)\
-            .metric(self.metric)\
-            .limit(self.limit)\
-            .nprobes(self.nprobes)\
-            .refine_factor(self.refine_factor)\
-            .to_polars()
+        if self.prefilter:
+            result = self.table.search(query_embedding)\
+                .filter(self.prefilter, prefilter=True)\
+                .metric(self.metric)\
+                .limit(self.limit)\
+                .nprobes(self.nprobes)\
+                .refine_factor(self.refine_factor)\
+                .to_polars()
+        else:
+            result = self.table.search(query_embedding)\
+                .metric(self.metric)\
+                .limit(self.limit)\
+                .nprobes(self.nprobes)\
+                .refine_factor(self.refine_factor)\
+                .to_polars()
         
         ## Rerank the results
         if self.rerank_sentiment:
