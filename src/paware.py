@@ -384,7 +384,6 @@ class PawQuery:
             DB_DIR: str,
             QUERY_SAVE_DIR: str,
             QUERY_NAME: str,
-            METRIC: str,
             LIMIT: int,
             NPROBES: int,
             REFINE_FACTOR: int,
@@ -392,7 +391,8 @@ class PawQuery:
             FILTER_SHORT_QUESTIONS: bool = False,
             RERANK_SENTIMENT: bool = False,
             RERANK_AGREE_DISTANCE: bool = False,
-            RERANK_DISAGREE_DISTANCE: bool = False
+            RERANK_DISAGREE_DISTANCE: bool = False,
+            METRIC: str = "cosine",
     ) -> None:
         
         self.config_name = CONFIG_NAME
