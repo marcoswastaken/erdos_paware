@@ -72,9 +72,13 @@ def rerank_by_sentiment(df: pl.DataFrame,
     df = df.with_row_index("rank")
     df = df.with_columns(
         pl.when((pl.col("summed_sentiments")<0))\
-            .then(pl.col("rank") - np.log2(-pl.col("summed_sentiments")) - sentiment_bump)\
+            .then(pl.col("rank") - 
+                  np.log2(-pl.col("summed_sentiments")) - 
+                  sentiment_bump)\
             .when((pl.col("summed_sentiments")>0))\
-            .then(pl.col("rank") + np.log2(pl.col("summed_sentiments")) + sentiment_bump)\
+            .then(pl.col("rank") + 
+                  np.log2(pl.col("summed_sentiments")) + 
+                  sentiment_bump)\
             .otherwise(pl.col("rank"))\
             .alias("rank")
     )
