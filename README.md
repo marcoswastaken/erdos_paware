@@ -20,7 +20,7 @@ The raw data provided to us consists of 5,528,298 posts from Reddit, from 34 sub
 
 For this project, we are focussed on the first two steps of the RAG process: Indexing and retrieval.
 
-![Image Description](flow_chart.png)
+![Image Description](images/flow_chart.png)
 
 ### Indexing
 
