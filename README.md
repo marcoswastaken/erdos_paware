@@ -40,7 +40,7 @@ Starting with the raw data, we performed some basic cleaning:
 
 We used the base version of the General Text Embeddings (GTE) model, which is based on the BERT framework. Documentation on HuggingFace: [link](https://huggingface.co/thenlper/gte-base).
 
-We chose this model because it seemed to be a reasonable size (0.22GB), it only requires ??@Marcos and it allows embedding of texts up to 512 tokens in length. It performs especially well in clustering and retrieval compared to other open source sentence transformers that have fewer than 250M parameters: [link](https://huggingface.co/spaces/mteb/leaderboard).
+We chose this model because it seemed to be a reasonable size (0.22GB), it is open source, and it allows embedding of texts up to 512 tokens in length. It performs especially well in clustering and retrieval compared to other open source sentence transformers that have fewer than 250M parameters: [link](https://huggingface.co/spaces/mteb/leaderboard).
 
 Moreover, part of its training was done using Reddit data, which added to its appeal.
 
@@ -135,7 +135,7 @@ We used three metrics for ranking results.
 
 #### Reciprocal Rank
 
-#### Modified Extended Reciprocal Rank
+#### Extended Reciprocal Rank (modified)
 
 #### NDCG (modified)
 
