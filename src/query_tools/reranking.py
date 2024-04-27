@@ -1,5 +1,4 @@
 import polars as pl
-import numpy as np
 
 def rerank_by_agree_distance(df: pl.DataFrame, 
                              agree_threshold: float = 0.25,
@@ -72,13 +71,9 @@ def rerank_by_sentiment(df: pl.DataFrame,
     df = df.with_row_index("rank")
     df = df.with_columns(
         pl.when((pl.col("summed_sentiments")<0))\
-            .then(pl.col("rank") - 
-                  np.log2(-pl.col("summed_sentiments")) - 
-                  sentiment_bump)\
+            .then(pl.col("rank") + sentiment_bump - .7403 * pl.col("summed_sentiments"))\
             .when((pl.col("summed_sentiments")>0))\
-            .then(pl.col("rank") + 
-                  np.log2(pl.col("summed_sentiments")) + 
-                  sentiment_bump)\
+            .then(pl.col("rank") - sentiment_bump - .7403 * pl.col("summed_sentiments"))\
             .otherwise(pl.col("rank"))\
             .alias("rank")
     )
