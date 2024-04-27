@@ -433,7 +433,7 @@ class PawQuery:
 
         if self.prefilter:
             result = self.table.search(query_embedding)\
-                .filter(self.prefilter, prefilter=True)\
+                .where(self.prefilter, prefilter=True)\
                 .metric(self.metric)\
                 .limit(self.limit)\
                 .nprobes(self.nprobes)\
