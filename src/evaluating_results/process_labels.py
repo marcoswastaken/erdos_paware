@@ -55,7 +55,7 @@ def get_merged_labels_and_votes(config:str)->pl.DataFrame:
     df = df.with_columns(
         pl.struct([pl.col(column_name) for column_name in vote_cols])\
             .map_elements(lambda s: [value for value in s.values() 
-                                 if value is not None])
+                                 if value is not None], return_dtype=pl.List(pl.Int64))\
                                  .alias("votes"))
     
     return df
