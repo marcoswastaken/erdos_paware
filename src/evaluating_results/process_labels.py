@@ -53,8 +53,8 @@ def get_merged_labels_and_votes(config:str)->pl.DataFrame:
     
     ## Add a column that has a list of all votes cast
     df = df.with_columns(
-        pl.struct([pl.col(column_name) for column_name in vote_cols])
-        .map_elements(lambda s: [value for value in s.values() 
+        pl.struct([pl.col(column_name) for column_name in vote_cols])\
+            .map_elements(lambda s: [value for value in s.values() 
                                  if value is not None])
                                  .alias("votes"))
     
