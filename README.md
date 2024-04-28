@@ -145,6 +145,8 @@ We used three metrics for ranking results. Each is a modified version of a recom
 
 #### Mean Reciprocal Rank
 
+This metric gives a score that indicates how close the the top the first known relevant result appears. A perfect score of 1 is achieve is the top result of every query is relevant.
+
 To compute reciprocal rank for a given query, we applied the following formula:
 $$\text{RR}=\dfrac{1}{n}$$
 where $n$ is the position at which the first known relevant result appears in the retrieved results. 
@@ -154,6 +156,8 @@ In [standard applications](https://en.wikipedia.org/wiki/Mean_reciprocal_rank), 
 We then computed the average of these scores across all of our standard queries to arrive at the Mean Reciprocal Rank.
 
 #### Mean Extended Reciprocal Rank
+
+This metric gives a score that indicates how many of our known relevant result appear near the top. A perfect score of 1 is achieved if all known relevant results appear as the top results for all queries (with no unlabeled result appearing higher than any known relevant result.)
 
 To compute extended reciprocal rank for a given query, we applied the following formula:
 $$\text{ExtRR}=\dfrac{1}{|K|}\sum_{K}k_i$$
@@ -171,6 +175,71 @@ We then computed the average of these scores across all of our standard queries 
 
 ## Results and Conclusion
 
+### Baseline
+
+We used the following model parameters as our baseline for comparison:
+
+* Chunk size for embedding: 512
+* No attached metadata
+* No pre-filtering before vector search
+* No re-ranking of results
+
+The baseline configuration achieve the following scores across our metrics:
+
+| Metric                                    |   Score  | Rank (out of 160) |
+|-------------------------------------------|:--------:|:-----------------:|
+| Mean Reciprocal Rank                      | 0.626031 | 46                |
+| Extended Mean Reciprocal Rank             | 0.427189 | 84                |
+| Normalized Discounted Cumulative Gain     | 0.714459 | 84                |
+| **Average Overall Rank**                  |          | **71.33**         |
+
+### Top Overall Result
+
+The configuration that achieved the best overall result (highest average rank across metrics):
+
+* Chunk size for embedding: 512
+* With attached metadata
+* Pre-filtering short questions before vector search
+* Re-ranking retrieved results using reply sentiment
+* Re-ranking retrieved results using reply "agree distance"
+
+This configuration achieve the following scores across our metrics:
+
+| Metric                                    |   Score  | Rank (out of 160) |
+|-------------------------------------------|:--------:|:-----------------:|
+| Mean Reciprocal Rank                      | 0.742735 | 7                 |
+| Extended Mean Reciprocal Rank             | 0.599379 | 9                 |
+| Normalized Discounted Cumulative Gain     | 0.806476 | 1                 |
+| **Average Overall Rank**                  |          | **5.67**          |
+
+Below, we can see the relative position of the baseline configuration to the top overall.
+
+![Top 100 configurations by MRR](images/top_100_rr_scores.png)
+![Top 100 configurations by MExt_RR](images/top_100_mext_rr_scores.png)
+![Top 100 configurations by DCG](images/top_100_dcg_scores.png)
+
+### Parameters with the Biggest Impact
+
+It appeared that decreased chunk size had a generally negative impact on results.
+
+![Performance across embedding variations](images/embedding_scores.png)
+
+Also, filtering out short questions prior to retrieval had a positive impact regardless of other hyperparameter choices.
+
+![Short questions and MRR](images/rr_score_filter_short_qs.png)
+
+![Short questions and MExt_RR](images/mext_rr_score_filter_short_qs.png)
+
+![Short questions and NDCG](images/dcg_score_filter_short_qs.png)
+
+If we highlight just those configuration that contain these variations together (512 chunk size, with added metadata, and filtering by short questions) we see how well they perform relative to other configurations.
+
+![Short questions and MRR highlighted](images/top_100_rr_scores_with_conditions.png)
+
+![Short questions and MExt_RR highlighted](images/top_100_mext_rr_scores_with_condition.png)
+
+![Short questions and NDCG highlighted](images/top_100_dcg_scores_with_conditions.png)
+
 ## Future Work
 
 Some areas of potential future investigation:
@@ -185,6 +254,7 @@ Some areas of potential future investigation:
   * Refine short question filter to handle more nuance in what makes a short question.
   * Modify agree distances by varying the selection of standard "agree statements" (similarly for disagree distances).
   * Experiment with additional "reply distance" variations.
+  * Experiment with re-ranking using a different chunk size than the primary embedding
 * Indexing Parameters:
   * Test various parameters to see if retrieval times can be improved within top configurations.
 * Re-ranking:
