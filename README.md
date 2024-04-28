@@ -160,9 +160,13 @@ We then computed the average of these scores across all of our standard queries 
 This metric gives a score that indicates how many of our known relevant result appear near the top. A perfect score of 1 is achieved if all known relevant results appear as the top results for all queries (with no unlabeled result appearing higher than any known relevant result.)
 
 To compute extended reciprocal rank for a given query, we applied the following formula:
+
 $$\text{ExtRR}=\dfrac{1}{|K|}\sum_{K}k_i$$
+
 where $K$ is the set of all known relevant results, and
+
 $$k_i = \begin{cases} 1 & \text{if }  n_i\leq|K| \\ \dfrac{1}{|K|-n_i+1}& \text{otherwise}\end{cases}$$
+
 where $n_i$ is the position at which the known relevant $k_i$ result appears in the retrieved results. 
 
 In [standard applications](https://towardsdatascience.com/extended-reciprocal-rank-ranking-evaluation-metric-5929573c778a), each relevant result has its own rank, and its contribution to the overall score takes into account this rank as its expcected position in the results. In our modified application, we gave the same contribution to any known relevant result that appeared above position $|K|$ in the results.
