@@ -165,7 +165,9 @@ In [standard applications](https://towardsdatascience.com/extended-reciprocal-ra
 
 We then computed the average of these scores across all of our standard queries to arrive at the Mean Reciprocal Rank.
 
-#### NDCG (modified)
+#### Normalized Discounted Cumulative Gain
+
+??@Sayantan
 
 ## Results and Conclusion
 
