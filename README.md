@@ -167,9 +167,9 @@ where $K$ is the set of all known relevant results, and
 
 $$k_i =  1  \text{ if }  n_i\leq|K| \text{, and } \dfrac{1}{|K|-n_i+1} \text{ otherwise,}$$
 
-where $n_i$ is the position at which the known relevant $k_i$ result appears in the retrieved results. 
+where $n_i$ is the position at which the known relevant  result, $k_i$, appears in the retrieved results.
 
-In [standard applications](https://towardsdatascience.com/extended-reciprocal-rank-ranking-evaluation-metric-5929573c778a), each relevant result has its own rank, and its contribution to the overall score takes into account this rank as its expcected position in the results. In our modified application, we gave the same contribution to any known relevant result that appeared above position $|K|$ in the results.
+In [standard applications](https://towardsdatascience.com/extended-reciprocal-rank-ranking-evaluation-metric-5929573c778a), each relevant result has its own rank, and its contribution to the overall score takes into account this rank as its expected position in the results. In our modified application, we gave the same contribution to any known relevant result that appeared above position $|K|$ in the results.
 
 We then computed the average of these scores across all of our standard queries to arrive at the Mean Reciprocal Rank.
 
