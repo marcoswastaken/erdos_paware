@@ -178,7 +178,7 @@ Some areas of potential future investigation:
 * Preprocessing:
   * Handling emojis and common abbreviations to better capture sentiments.
 * Labeling:
-  * Label additional data, representing a wider range of query types and targetting a larger subset of the data.
+  * Label additional data, representing a wider range of query types and targeting a larger subset of the data.
   * Augment with automated labeling using an LLM or other means.
   * Rank relevant results (as opposed to simply categorizing as relevant versus irrelevant) so that we might apply metrics that detect more subtlety that might better quantify the impact of our engineered hyperparameter.
 * Hyperparameter Engineering:
@@ -187,6 +187,6 @@ Some areas of potential future investigation:
   * Experiment with additional "reply distance" variations.
 * Indexing Parameters:
   * Test various parameters to see if retrieval times can be improved within top configurations.
-* Reranking:
+* Re-ranking:
   * Refine re-ranking implementations and experiment with variations.
   * Experiment with the order of re-rankings to understand whether that has an impact on overall results.
