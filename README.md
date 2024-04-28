@@ -175,7 +175,7 @@ We then computed the average of these scores across all of our standard queries 
 
 #### Normalized Discounted Cumulative Gain
 
-??@Sayantan
+The normalized discounted cumulative gain measures how closely our query retrieval is operating to the ideal response; i.e, all relevant results should be at the top of the reply list, and all irrelevant ones at the bottom.
 
 ## Results and Conclusion
 
