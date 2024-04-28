@@ -165,8 +165,7 @@ $$\text{ExtRR}=\dfrac{1}{|K|}\sum_{K}k_i$$
 
 where $K$ is the set of all known relevant results, and
 
-$$k_i = \begin{cases} 1 & \text{if }  n_i\leq|K| 
-\\ \dfrac{1}{|K|-n_i+1}& \text{otherwise}\end{cases}$$
+$$k_i = \left\{ 1  \text{ if }  n_i\leq|K| \text{ and } \dfrac{1}{|K|-n_i+1} \text{ otherwise}\right\}$$
 
 where $n_i$ is the position at which the known relevant $k_i$ result appears in the retrieved results. 
 
