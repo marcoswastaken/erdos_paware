@@ -20,7 +20,7 @@ The raw data provided to us consists of 5,528,298 posts from Reddit, from 34 sub
 
 For this project, we are focussed on the first two steps of the RAG process: Indexing and retrieval.
 
-![Image Description](images/flow_chart.png)
+![Result and Query Processing Pipeline](images/flow_chart.png)
 
 ### Indexing
 
@@ -104,11 +104,19 @@ We engineered two type of metadata:
 1. A measure of `sentiment` of replies and,
 2. A  measure of `agree_distance` (and `disagree_distance`) for replies.
 
-In the case of `reply_sentiment`, our hypotheses was that a post with more positive replies would be more likely to contain useful information. We used ....
+In the case of `reply_sentiment`, our hypotheses was that a post with more positive replies would be more likely to contain useful information. We used .... ??@Karthik
 
 In the case of  `agree_distance` we measured the distance between each `reddit_text` and a set of "agree statements". Then, whenever a submission or comment had replies, we added the `top_reply_agree_distance` and the `avg_reply_agree_distance`. Our hypothesis was that posts with replies that were closer to "agree" statements would be more likely to contain relevant information. Similarly, posts with replies that were closer to "disagree" statements would be less likely to be relevant.
 
-We had other ideas that we would like to implement, but they are relegated to future work.
+When re-ranking, results with lower `avg_reply_agree_distance` were bumped higher, results with lower `avg_reply_disagree_distance` were bumped lower.
+
+## Tested Configurations
+
+We tested 160 different model configurations. Each configuration included a choice of embedding, a strategy for filtering the tests before performing our vector search, and a strategy for re-ranking the results that were retrieved. 
+
+These hyper-parameters are summarized in the image below:
+
+![Configuration Variations](images/config_summary.png)
 
 ## Evaluating Results
 
@@ -117,7 +125,7 @@ We had two main objectives that we had in mind when evaluating our results:
 1. We wanted query results to place relevant documents as high as possible in our ranking.
 2. We wanted query results to be returned in less than a second.
 
-While times is easy enough to measure, we needed to develop some tools to measure our progress on result ranking.
+While retrieval time is easy enough to measure, we needed to develop some tools to measure our progress on result ranking.
 
 ### Getting Labeled Data
 
@@ -127,16 +135,40 @@ To establish a baseline for evaluating result ranking, we manually labeled a sub
 2. Related to the query, but not relevant to the query
 3. Not related to the query
 
-Results that were collectively rated as 1 were considered relevant results. This manually labeled data was then used to quantify results.
+![An example of a query-result pair during labeling](images/labeling_example.png)
+
+For each query-result pair, the final label was determined by plurality vote, with ties defaulting to less relevant. This manually labeled data was then used to quantify results.
 
 ### Quantifying Results
 
-We used three metrics for ranking results. 
+We used three metrics for ranking results. Each is a modified version of a recommender system metric, adapted to our use case where we do not have a clear ground truth, or an established ranking of relevant results from most relevant to least relevant.
 
-#### Reciprocal Rank
+#### Mean Reciprocal Rank
 
-#### Extended Reciprocal Rank (modified)
+To compute reciprocal rank for a given query, we applied the following formula:
+$$\text{RR}=\dfrac{1}{n}$$
+where $n$ is the position at which the first known relevant result appears in the retrieved results. 
+
+In [standard applications](https://en.wikipedia.org/wiki/Mean_reciprocal_rank), there is a single known "ground truth" result. In our modified application, we accepted any known relevant result as the ground truth.
+
+We then computed the average of these scores across all of our standard queries to arrive at the Mean Reciprocal Rank.
+
+#### Mean Extended Reciprocal Rank
+
+To compute extended reciprocal rank for a given query, we applied the following formula:
+$$\text{ExtRR}=\dfrac{1}{|K|}\sum_{K}k_i$$
+where $K$ is the set of all known relevant results, and
+$$k_i = \begin{cases} 1 & \text{if }  n_i\leq|K| \\ \dfrac{1}{|K|-n_i+1}& \text{otherwise}\end{cases}$$
+where $n_i$ is the position at which the known relevant $k_i$ result appears in the retrieved results. 
+
+In [standard applications](https://towardsdatascience.com/extended-reciprocal-rank-ranking-evaluation-metric-5929573c778a), each relevant result has its own rank, and its contribution to the overall score takes into account this rank as its expcected position in the results. In our modified application, we gave the same contribution to any known relevant result that appeared above position $|K|$ in the results.
+
+We then computed the average of these scores across all of our standard queries to arrive at the Mean Reciprocal Rank.
 
 #### NDCG (modified)
 
 ## Results and Conclusion
+
+## Future Work
+
+Some areas of potential improvement:
