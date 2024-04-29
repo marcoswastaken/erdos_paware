@@ -175,7 +175,11 @@ We then computed the average of these scores across all of our standard queries 
 
 #### Normalized Discounted Cumulative Gain
 
-The normalized discounted cumulative gain measures how closely our query retrieval is operating to the ideal response; i.e, all relevant results should be at the top of the reply list, and all irrelevant ones at the bottom.
+Discounted cumulative gain (DCG) is often employed as a metric to evaluate the performance of a search engine, and measures the efficiency of the algorithm in placing relevant results at the top of the retrieval list. For a list of responses of length $$k$$, DCG score at position $$j$$ is defined as
+
+$$DCG_{j} = \sum_{i=1}^{j}\frac{rel_i}{log_{2}(i+1)}$$,
+
+where $$rel_{i}$$
 
 ## Results and Conclusion
 
