@@ -10,7 +10,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import numpy as np
-import pandas as pd
 import polars as pl
 from pathlib import Path
 
@@ -18,7 +17,7 @@ MODEL = "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis"
 
 class TextLoader(Dataset):
     def __init__(self, file, tokenizer):
-        df = pd.read_parquet(file)
+        df = pl.read_parquet(file)
         print('File name', file)
         print('Number of records in file', len(df))
         self.file = tokenizer(list(df['reddit_text']), padding=True, truncation=True, max_length=64, return_tensors='pt')   
@@ -53,7 +52,7 @@ def interpret_logits(npy_file):
     return sentiments
 
 def update_dataframe_with_sentiments(base_dir, parquet_path, npy_file_path):
-    df = pd.read_parquet(parquet_path)
+    df = pl.read_parquet(parquet_path)
     sentiments = interpret_logits(npy_file_path)
     df['text_sentiment'] = sentiments
     df.to_parquet(parquet_path)
