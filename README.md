@@ -104,7 +104,7 @@ We engineered two type of metadata:
 1. A measure of `sentiment` of replies and,
 2. A  measure of `agree_distance` (and `disagree_distance`) for replies.
 
-In the case of `reply_sentiment`, our hypotheses was that a post with more positive replies would be more likely to contain useful information. We used .... ??@Karthik
+In the case of `reply_sentiment`, we utilized a pre-trained natural language processing model called "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis", to gauge the emotional tone behind the texts. This model helped us to classify each reply into categories such as positive, neutral, or negative. The sentiment scores of all the replies were then aggregated to reflect the overall sentiment towards each original post and the following comments. The underlying assumption here is that posts generating predominantly positive replies are likely to be constructive and informative, thereby serving as a proxy for user endorsements similar to upvotes in reddit. Our hypotheses was that a post with more positive replies would be more likely to contain useful information. 
 
 In the case of  `agree_distance` we measured the distance between each `reddit_text` and a set of "agree statements". Then, whenever a submission or comment had replies, we added the `top_reply_agree_distance` and the `avg_reply_agree_distance`. Our hypothesis was that posts with replies that were closer to "agree" statements would be more likely to contain relevant information. Similarly, posts with replies that were closer to "disagree" statements would be less likely to be relevant.
 
