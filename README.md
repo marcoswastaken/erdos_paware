@@ -187,7 +187,7 @@ $$NDCG_j = DCG_j/IDCG_j; ~~~~ IDCG_j = \sum_{i=1}^{j}\frac{rel_{i}^{Ideal}}{log_
 
 where the $rel_{i}^{Ideal}$ is the score in ideal scenario where all the relevant results are at the top of the list.
 
-NDCG can take in ordinal relevance score (1 for highly relevant, 2 for somewhat relevant, so on). We modify the scoring scheme for our case, by converting our human labels (1-relevant, 2-related but not relevant, 3-not related) into a binary scoring scheme. Results with human label = 1 were given a relevance score =1, and everything else was given a relevance score of 0. This was done to ensure that the best configuration, as dictated by the NDCG score, should only return highly relevant results. We then computed the NDCG score of our standard queries and averaged them to obtain the mean NDCG score of a particular configuration
+NDCG can take in ordinal relevance score (1 for highly relevant, 2 for somewhat relevant, so on). We modify the scoring scheme for our case, by converting our human labels (1-relevant, 2-related but not relevant, 3-not related) into a binary scoring scheme. Results with human label = 1 were given a relevance score =1, and everything else was given a relevance score of 0. This was done to ensure that the best configuration, as dictated by the NDCG score, should only return highly relevant results. We then computed the NDCG score of our standard queries and averaged them to obtain the mean NDCG score of a particular configuration.
 
 ## Results and Conclusion
 
