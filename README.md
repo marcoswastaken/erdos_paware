@@ -175,11 +175,15 @@ We then computed the average of these scores across all of our standard queries 
 
 #### Normalized Discounted Cumulative Gain
 
-Discounted cumulative gain (DCG) is often employed as a metric to evaluate the performance of a search engine, and measures the efficiency of the algorithm in placing relevant results at the top of the retrieval list. For a list of responses of length $$k$$, DCG score at position $$j$$ is defined as
+[Discounted cumulative gain (DCG)](https://en.wikipedia.org/wiki/Discounted_cumulative_gain#cite_note-:0-2) is often employed as a metric to evaluate the performance of a search engine, and measures the efficiency of the algorithm in placing relevant results at the top of the retrieval list. For a list of responses of length $k$, DCG score at position $j$ is defined as
 
 $$DCG_{j} = \sum_{i=1}^{j}\frac{rel_i}{log_{2}(i+1)}$$,
 
-where $$rel_{i}$$
+where $rel_{i}$ is the relevance score of the response at position $i$, and the logarithmic factor in the denominator (called the discount) ensures that [different ranking technqiues are consistent](https://arxiv.org/pdf/1304.6480) within this metric, and that highly relevant results appearing in the bottom of the retrieval list will contribute less to the score, than if they appeared higher.
+
+Since the DCG score is strongly dependent on the length of the retrieval list, we need to normalize it so that scoring is consistent across query retrieval scenarios with variable number of results. The normalized discounted cumulative gain(NDCG) score at position $j$ is then defined as
+
+$$NDCG_j = DCG_j/IDCG_j;  IDCG_j = \sum_{i=1}^{j}\frac{rel_{i}^{Ideal}}{log_2(i+1)}$$ 
 
 ## Results and Conclusion
 
