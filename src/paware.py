@@ -620,26 +620,24 @@ class PawScores:
 
     def ndcg_calc(self, array):
 
-        ndcg = np.zeros(len(array))
-        ndcg_ideal = np.zeros(len(array))
+        dcg = 0
+        dcg_ideal = 0
     
         sort_ind = np.argsort(array)
         sorted_arr = np.take(array,sort_ind[::-1])
         rel = [2**array[i]-1 for i in range(len(array))]
         rel_ideal = [2**sorted_arr[i]-1 for i in range(len(sorted_arr))]
     
-        for i in range(len(ndcg)):
-            for j in range(len(array)):
-                ndcg[i] = ndcg[i]+rel[j]/math.log2(j+2)
+        for j in range(len(array)):
+            dcg = dcg+rel[j]/math.log2(j+2)
 
-        for i in range(len(ndcg_ideal)):
-            for j in range(len(sorted_arr)):
-                ndcg_ideal[i] = ndcg_ideal[i]+rel_ideal[j]/math.log2(j+2)+1e-8
+        for j in range(len(sorted_arr)):
+            dcg_ideal = dcg_ideal+rel_ideal[j]/math.log2(j+2)
 
         # Add the 1e-8 to control division by 0 error. 
         # This results when all the entries are irrelevant.
     
-        return np.mean(np.divide(ndcg,ndcg_ideal))
+        return dcg/(dcg_ideal+1e-8)
     
     def compute_dcg_scores(self):
         # Apply thresolding, chuck out everything from the 00 and 02 config 
