@@ -44,7 +44,8 @@ device_staging = 'cuda:0' if torch.cuda.device_count() > 1 else 'cuda'
 model = model.to(device_staging)
 
 def get_all_files(path):
-    return list(Path(path).glob("split_*.parquet"))
+    print("Reading files from: ", path)
+    return list(Path(path).glob("*.parquet"))
 
 def interpret_logits(npy_file):
     logits = np.load(npy_file, allow_pickle=True)
