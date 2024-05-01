@@ -187,7 +187,12 @@ $$\text{ExtRR}=\dfrac{1}{|K|}\sum_{K}k_i$$
 
 where $K$ is the set of all known relevant results, and
 
-$$k_i =  1  \text{ if }  n_i\leq|K|, ~~\text{and }~ \dfrac{1}{|K|-n_i+1} ~\text{ otherwise,}$$
+```math
+k_i =
+\begin{cases}
+1  & \text{ if }  n_i\leq|K|\\ \dfrac{1}{|K|-n_i+1} & \text{ otherwise}
+\end{cases}  
+```
 
 where $n_i$ is the position at which the known relevant  result, $k_i$, appears in the retrieved results.
 
@@ -199,7 +204,9 @@ We then computed the average of these scores across all of our standard queries 
 
 [Discounted cumulative gain (DCG)](https://en.wikipedia.org/wiki/Discounted_cumulative_gain#cite_note-:0-2) is often employed as a metric to evaluate the performance of a search engine, and measures the efficiency of the algorithm in placing relevant results at the top of the retrieval list. For a list of responses of length $k$, DCG score at position $j$ is defined as
 
-$$\text{DCG}_{j} = \sum_{i=1}^{j}\frac{\text{rel}_i}{\log_{2}(i+1)}$$,
+```math
+\text{DCG}_{j} = \sum_{i=1}^{j}\frac{\text{rel}_i}{\log_{2}(i+1)},
+```
 
 where $rel_{i}$ is the relevance score of the response at position $i$, and the logarithmic factor in the denominator (called the discount) ensures that [different ranking technqiues are consistent](https://arxiv.org/pdf/1304.6480) within this metric, and that highly relevant results appearing in the bottom of the retrieval list will contribute less to the score, than if they appeared higher.
 
@@ -210,7 +217,11 @@ Since the DCG score is strongly dependent on the length of the retrieval list, w
 ```
 where the $\text{rel}_{i}^{\text{Ideal}}$ is the score in ideal scenario where all the relevant results are at the top of the list.
 
-NDCG can take in ordinal relevance score (1 for highly relevant, 2 for somewhat relevant, so on). We modify the scoring scheme for our case, by converting our human labels (1-relevant, 2-related but not relevant, 3-not related) into a binary scoring scheme. Results with human label = 1 were given a relevance score =1, and everything else was given a relevance score of 0. This was done to ensure that the best configuration, as dictated by the NDCG score, should only return highly relevant results. We then computed the NDCG score of our standard queries and averaged them to obtain the mean NDCG score of a particular configuration. The DCG scores and IDCG scores were calculated by setting $\text{rel}_{i} = 2^{\text{score}_{i}}-1$, where $\text{score}_i = 1$ if the document retrieved is relevant, and $0$ if the document retrieved is irrelevant.
+NDCG can take in ordinal relevance score (1 for highly relevant, 2 for somewhat relevant, so on). We modify the scoring scheme for our case, by converting our human labels (1-relevant, 2-related but not relevant, 3-not related) into a binary scoring scheme. Results with human label = 1 were given a relevance score =1, and everything else was given a relevance score of 0. This was done to ensure that the best configuration, as dictated by the NDCG score, should only return highly relevant results. We then computed the NDCG score of our standard queries and averaged them to obtain the mean NDCG score of a particular configuration. The DCG scores and IDCG scores were calculated by setting
+```math
+\text{rel}_{i} = 2^{\text{score}_{i}}-1,
+```
+ where $\text{score}_i = 1$ if the document retrieved is relevant, and $0$ if the document retrieved is irrelevant.
 
 ## Results and Conclusion
 
