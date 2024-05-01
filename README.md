@@ -205,7 +205,7 @@ where $rel_{i}$ is the relevance score of the response at position $i$, and the 
 
 Since the DCG score is strongly dependent on the length of the retrieval list, we need to normalize it so that scoring is consistent across query retrieval scenarios with variable number of results. The normalized discounted cumulative gain (NDCG) score at position $j$ is then defined as
 
-$$\text{NDCG}_j = \text{DCG}_j/\text{IDCG}_j; ~~~~ \text{IDCG}_j = \sum_{i=1}^{j}\frac{\text{rel}_{i}^{\text{Ideal}}}{\log_2(i+1)}$$ 
+$$\text{NDCG}_j = \frac{\text{DCG}_j}{\text{IDCG}_j}; \text{ where }\text{IDCG}_j = \sum_{i=1}^{j}\frac{\text{rel}_{i}^{\text{Ideal}}}{\log_2(i+1)}$$ 
 
 where the $\text{rel}_{i}^{\text{Ideal}}$ is the score in ideal scenario where all the relevant results are at the top of the list.
 
