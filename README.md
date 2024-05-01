@@ -64,8 +64,8 @@ We use the Sentence Transformers framework provided by [SBERT](https://www.sbert
 
 During embedding we considered the following parameters:
 
-* chunk_size: The maximum length of text to embed as a document
-* chunk_overlap: Whenever a document needed to be broken into chunks, how much should they overlap
+* `chunk_size`: The maximum length of text to embed as a document
+* `chunk_overlap`: Whenever a document needed to be broken into chunks, how much should they overlap
 
 We also experimented with attaching metadata to chunks prior to embedding. To do this, we simply add the subreddit title (or an approximation) to the start of a text chunk before embedding. For example, if there is a comment in the FedExers that says “I really like working here because...” then we would append “FedEx” to the start of the chunk and embed “FedEx \n\n I really like working here because...”
 
