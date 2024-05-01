@@ -1,6 +1,6 @@
 # Pawsitive Retrieval (Aware Data Project)
 
-This project was completed by Marcos Ortiz, Sayantan Roy, Karthik Prabhu, Kristina Knoles, and Diptanil Roy, as part of [The Erdös Institute](https://www.erdosinstitute.org/) Deep Learning Boot Camp (Spring, 2024).
+This project was completed by Marcos Ortiz, Sayantan Roy, Karthik Prabhu, Kristina Knowles, and Diptanil Roy, as part of [The Erdös Institute](https://www.erdosinstitute.org/) Deep Learning Boot Camp (Spring, 2024).
 
 Our project is detailed below, and you can follow along with the main steps through the demonstration notebooks and data provided in the [/paw_demo/](https://github.com/marcoswastaken/erdos_paware/tree/main/paw_demo) directory.
 
