@@ -1,5 +1,9 @@
 # Pawsitive Retrieval (Aware Data Project)
 
+This project was completed by Marcos Ortiz, Sayantan Roy, Karthik Prabhu, Kristina Knoles, and Diptanil Roy, as part of [The Erdös Institute](https://www.erdosinstitute.org/) Deep Learning Boot Camp (Spring, 2024).
+
+Our project is detailed below, and you can follow along with the main steps through the demonstration notebooks and data provided in the [/paw_demo/](../paw_demo/) directory.
+
 ## Objective
 
 Given an arbitrary user query and a dataset of human-generated content, build an algorithm to identify and rank the relevant content in the dataset, such that the match set can be retrieved quickly and accurately
@@ -48,7 +52,7 @@ We considered experimentation with other models, but due to the high computation
 
 #### Embedding Parameters
 
-We use the Sentence Transformers framework provided by SBERT to implement our embedding model: [link](https://www.sbert.net/).
+We use the Sentence Transformers framework provided by [SBERT](https://www.sbert.net/) to implement our embedding model, as well as Hugging Face Embedding tools provided by [Langchain](https://api.python.langchain.com/en/latest/embeddings/langchain_community.embeddings.huggingface.HuggingFaceEmbeddings.html)
 
 During embedding we considered the following parameters:
 
@@ -58,6 +62,16 @@ During embedding we considered the following parameters:
 We also experimented with attaching metadata to chunks prior to embedding. To do this, we simply add the subreddit title (or an approximation) to the start of a text chunk before embedding. For example, if there is a comment in the FedExers that says “I really like working here because...” then we would append “FedEx” to the start of the chunk and embed “FedEx \n\n I really like working here because...”
 
 Our intuition was that, in the cases where a post does not explicitly include the name of the company they are discussing, we might infer that information from the subreddit and that this might nudge that vector closer to our query. For example, If we ask “Why do employees like working at Disney?” and “Why do employees like working at FedEx?” our hope is that the addition of metadata makes it more likely that the above comment shows up higher in the results for the FedEx query, and maybe lower in the results for the Disney query.
+
+We used [spotlight](https://github.com/Renumics/spotlight) to visualize the effect on a small sample of our data.
+
+Embedding without metadata:
+
+![Embedding without metadata](/images/spotlight_no_metadata.png)
+
+Embedding with metadata:
+
+![Embedding with metadata](/images/spotlight_metadata.png)
 
 #### Vector Database
 

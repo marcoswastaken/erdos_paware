@@ -159,7 +159,8 @@ def chunk_preprocessed_data_with_subreddit(
     ## Break longer texts into chunks
     data_chunked = data_chunked.with_columns(
         text_chunk=pl.col("reddit_text").map_elements(
-            lambda x:text_splitter.split_text(x)))
+            lambda x:text_splitter.split_text(x))
+            )
     
     ## Explode the text chunks
     data_chunked = data_chunked.explode("text_chunk")
