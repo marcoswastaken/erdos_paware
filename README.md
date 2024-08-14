@@ -167,7 +167,7 @@ We used three metrics for ranking results. Each is a modified version of a recom
 
 #### Mean Reciprocal Rank
 
-This metric gives a score that indicates how close the the top the first known relevant result appears. A perfect score of 1 is achieve is the top result of every query is relevant.
+This metric gives a score that indicates how close to the top the first known relevant result appears. A perfect score of 1 is achieved if the top result of every query is relevant.
 
 To compute reciprocal rank for a given query, we applied the following formula:
 $$\text{RR}=\dfrac{1}{n}$$
